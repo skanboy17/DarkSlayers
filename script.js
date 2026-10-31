@@ -1,6 +1,4 @@
-/* DARKSLAYERS - stable base + safe UI fixes */
-document.write('<script src="script-base.js?v=20261101-adminrestore1"><\/script>');
-
+/* DARKSLAYERS - UI fixes; script-base.js is loaded first by index.html */
 (function () {
     function removeSkybornFromGame() {
         var game = document.getElementById('characterGame');
@@ -63,14 +61,11 @@ document.write('<script src="script-base.js?v=20261101-adminrestore1"><\/script>
         var modal = document.getElementById('siteModal');
         if (modal && !modal.__dsObserver) {
             modal.__dsObserver = true;
-            new MutationObserver(function () { removeSkybornFromGame(); })
-                .observe(modal, {childList:true, subtree:true});
+            new MutationObserver(function () { removeSkybornFromGame(); }).observe(modal, {childList:true, subtree:true});
         }
         document.addEventListener('change', function(e) {
             if (e.target && (e.target.id === 'characterClass' || e.target.id === 'characterSpec')) setTimeout(decorate, 0);
         });
     }
-
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
-    else install();
+    install();
 })();
