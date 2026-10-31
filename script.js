@@ -839,7 +839,7 @@ async function registerDarkSlayers(event) {
         password,
         options: {
             data: { display_name: name },
-            emailRedirectTo: "https://skanboy17.github.io/DarkSlayers/"
+            emailRedirectTo: "https://darkslayers.ro/"
         }
     });
     if (error) return authMessage(error.message, "error");
