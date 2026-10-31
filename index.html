@@ -2,27 +2,22 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>DARKSLAYERS | Gaming Community</title>
-<meta name="description" content="DARKSLAYERS Gaming Community">
-<style>html,body{margin:0;background:#050505;color:white;font-family:Arial,sans-serif}#loading{min-height:100vh;display:grid;place-items:center;font-weight:900;color:#e32932}</style>
+<link rel="stylesheet" href="style.css?v=20261101-fix">
 </head>
 <body>
-<div id="loading">DARKSLAYERS SE INCARCA...</div>
+<div id="app"></div>
 <script>
-(async()=>{
- const base='https://cdn.jsdelivr.net/gh/skanboy17/DarkSlayers@ccea91e8978e5791da5a2cabcf5b4ea0a721cdad/';
- try{
-   const response=await fetch(base+'index.html',{cache:'no-store'});
-   if(!response.ok) throw new Error('HTTP '+response.status);
-   let html=await response.text();
-   html=html.replace(/<head([^>]*)>/i,'<head$1><base href="'+base+'">');
-   document.open();document.write(html);document.close();
- }catch(err){
-   document.body.innerHTML='<div id="loading">EROARE LA INCARCAREA DARKSLAYERS</div>';
-   console.error(err);
- }
-})();
+fetch('https://raw.githubusercontent.com/skanboy17/DarkSlayers/ccea91e8978e5791da5a2cabcf5b4ea0a721cdad/index.html')
+.then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text()})
+.then(html=>{
+ const body=html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+ document.getElementById('app').innerHTML=body?body[1]:html;
+ const scripts=[...document.getElementById('app').querySelectorAll('script')];
+ scripts.forEach(old=>{const s=document.createElement('script');[...old.attributes].forEach(a=>s.setAttribute(a.name,a.value));s.textContent=old.textContent;old.replaceWith(s)});
+})
+.catch(e=>{document.getElementById('app').innerHTML='<div style="padding:40px;color:white;background:#050505;min-height:100vh;font-family:Arial"><h1 style="color:#d9272e">DARKSLAYERS</h1><p>Eroare la incarcarea site-ului.</p></div>';console.error(e)});
 </script>
 </body>
 </html>
