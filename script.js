@@ -1137,17 +1137,17 @@ const DARKSLAYERS_WOW_CLASSES = {
 
 
 const DARKSLAYERS_CLASS_ICONS = {
-    "Warrior": "images/classes/warrior.png",
-    "Paladin": "images/classes/paladin.png",
-    "Death Knight": "images/classes/death-knight.png",
-    "Druid": "images/classes/druid.png",
-    "Hunter": "images/classes/hunter.png",
-    "Rogue": "images/classes/rogue.png",
-    "Priest": "images/classes/priest.png",
-    "Shaman": "images/classes/shaman.png",
-    "Mage": "images/classes/mage.png",
-    "Warlock": "images/classes/warlock.png",
-    "Skyborn": "images/classes/skyborn.png"
+    "Warrior": "images/warrior.png",
+    "Paladin": "images/paladin.png",
+    "Death Knight": "images/death-knight.png",
+    "Druid": "images/druid.png",
+    "Hunter": "images/hunter.png",
+    "Rogue": "images/rogue.png",
+    "Priest": "images/priest.png",
+    "Shaman": "images/shaman.png",
+    "Mage": "images/mage.png",
+    "Warlock": "images/warlock.png",
+    "Skyborn": "images/skyborn.png"
 };
 
 if (!DARKSLAYERS_WOW_CLASSES["Skyborn"]) {
