@@ -1154,7 +1154,7 @@ async function loadMyCharacters(userId){
     if(!darkslayersSupabase || !userId) return [];
     const {data,error} = await darkslayersSupabase
         .from("characters")
-        .select("id,created_at,user_id,character_name,game,faction,class,spec,combat_role,level,is_main")
+        .select("id,created_at,user_id,character_name,game,faction,class,spec,combat_role,level,is_main,character_image_url,gear_score,profession1,profession2")
         .eq("user_id", userId)
         .order("is_main", {ascending:false})
         .order("character_name", {ascending:true});
@@ -1163,6 +1163,31 @@ async function loadMyCharacters(userId){
         return [];
     }
     return data || [];
+}
+
+function darkslayersCharacterPortrait(c, className = ""){
+    const url = c?.character_image_url ? escapeHtml(c.character_image_url) : "";
+    const faction = String(c?.faction || "Horde").toLowerCase();
+    const initial = escapeHtml((c?.character_name || "D").charAt(0).toUpperCase());
+    return `<div class="ds-character-portrait ${faction} ${className}">
+        ${url ? `<img src="${url}" alt="${escapeHtml(c.character_name || "Character")}">` : `<span>${initial}</span>`}
+        <b>${escapeHtml(c?.faction || "Horde")}</b>
+    </div>`;
+}
+
+function darkslayersMainCharacterCard(c){
+    if(!c) return '';
+    return `<div class="ds-main-character-card">
+        ${darkslayersCharacterPortrait(c, "ds-character-portrait-large")}
+        <div class="ds-main-character-data">
+            <div class="ds-main-character-top"><span>⭐ MAIN CHARACTER</span><em>${darkslayersCombatRoleIcon(c.combat_role)} ${escapeHtml(c.combat_role || "DPS")}</em></div>
+            <h2>${escapeHtml(c.character_name)}</h2>
+            <div class="ds-main-character-tags">
+                <span>${escapeHtml(c.game)}</span><span>${escapeHtml(c.faction)}</span><span>${escapeHtml(c.class)}</span><span>${escapeHtml(c.spec || "Fara spec")}</span>${c.level ? `<span>LEVEL ${Number(c.level)}</span>` : ''}${c.gear_score ? `<span>GS ${Number(c.gear_score)}</span>` : ''}
+            </div>
+            ${(c.profession1 || c.profession2) ? `<p>Profesii: ${escapeHtml(c.profession1 || "-")}${c.profession2 ? ` • ${escapeHtml(c.profession2)}` : ''}</p>` : ''}
+        </div>
+    </div>`;
 }
 
 async function openMyProfile(){
@@ -1178,7 +1203,7 @@ async function openMyProfile(){
 
     const charsHtml = chars.length ? chars.map(c => `
         <div class="ds-character-card ${c.is_main ? "is-main" : ""}">
-            <div class="ds-character-icon">${darkslayersCombatRoleIcon(c.combat_role)}</div>
+            ${darkslayersCharacterPortrait(c, "ds-character-portrait-small")}
             <div class="ds-character-info">
                 <strong>${escapeHtml(c.character_name)}</strong>
                 <span>${escapeHtml(c.class)} • ${escapeHtml(c.spec || "Fara spec")} • ${escapeHtml(c.combat_role || "DPS")}</span>
@@ -1206,6 +1231,8 @@ async function openMyProfile(){
                     ${main ? `<small>⭐ MAIN: ${escapeHtml(main.character_name)} • ${escapeHtml(main.class)} • ${escapeHtml(main.spec || "")} • ${escapeHtml(main.combat_role || "DPS")}</small>` : ""}
                 </div>
             </div>
+
+            ${darkslayersMainCharacterCard(main)}
 
             <div class="ds-profile-buttons">
                 <button class="auth-submit" type="button" onclick="openProfileSettings()">🖼 AVATAR & PROFIL</button>
@@ -1344,7 +1371,7 @@ async function openCharacterEditor(characterId = null){
     if(characterId){
         const {data,error} = await darkslayersSupabase
             .from("characters")
-            .select("id,user_id,character_name,game,faction,class,spec,combat_role,level,is_main")
+            .select("id,user_id,character_name,game,faction,class,spec,combat_role,level,is_main,character_image_url,gear_score,profession1,profession2")
             .eq("id", characterId)
             .eq("user_id", user.id)
             .maybeSingle();
@@ -1392,6 +1419,20 @@ async function openCharacterEditor(characterId = null){
                 <label>LEVEL</label>
                 <input id="characterLevel" type="number" min="1" max="100" value="${character?.level ? Number(character.level) : ""}" placeholder="80">
 
+                <label>POZA CARACTERULUI</label>
+                <input id="characterImageFile" type="file" accept="image/png,image/jpeg,image/webp">
+                <small class="ds-form-note">Pune un screenshot/portret cu personajul. PNG, JPG sau WEBP, maxim 2 MB.</small>
+                ${character?.character_image_url ? `<div class="ds-character-edit-preview">${darkslayersCharacterPortrait(character, "ds-character-portrait-large")}</div>` : ""}
+
+                <label>GEAR SCORE <small>(optional)</small></label>
+                <input id="characterGearScore" type="number" min="0" max="99999" value="${character?.gear_score ? Number(character.gear_score) : ""}" placeholder="Ex: 5200">
+
+                <label>PROFESIA 1 <small>(optional)</small></label>
+                <input id="characterProfession1" maxlength="30" value="${escapeHtml(character?.profession1 || "")}" placeholder="Ex: Engineering">
+
+                <label>PROFESIA 2 <small>(optional)</small></label>
+                <input id="characterProfession2" maxlength="30" value="${escapeHtml(character?.profession2 || "")}" placeholder="Ex: Mining">
+
                 <label class="ds-check-row">
                     <input id="characterMain" type="checkbox" ${character?.is_main ? "checked" : ""}>
                     ⭐ SETEAZA CA MAIN CHARACTER
@@ -1412,6 +1453,24 @@ async function saveMyCharacter(event, characterId){
     const user = await getDarkSlayersUser();
     if(!user) return;
 
+    const imageFile = document.getElementById("characterImageFile")?.files?.[0];
+    let characterImageUrl = undefined;
+    if(imageFile){
+        if(imageFile.size > 2 * 1024 * 1024){
+            alert("Poza caracterului trebuie sa aiba maxim 2 MB.");
+            return;
+        }
+        const ext = (imageFile.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g,"");
+        const path = `${user.id}/characters/character-${Date.now()}.${ext}`;
+        const upload = await darkslayersSupabase.storage.from("avatars").upload(path, imageFile, {upsert:true, cacheControl:"3600"});
+        if(upload.error){
+            console.error(upload.error);
+            alert("Nu am putut incarca poza caracterului.");
+            return;
+        }
+        characterImageUrl = darkslayersSupabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+    }
+
     const row = {
         user_id:user.id,
         character_name:document.getElementById("characterName").value.trim(),
@@ -1421,8 +1480,12 @@ async function saveMyCharacter(event, characterId){
         spec:document.getElementById("characterSpec").value,
         combat_role:document.getElementById("characterCombatRole").value,
         level:Number(document.getElementById("characterLevel").value) || null,
+        gear_score:Number(document.getElementById("characterGearScore").value) || null,
+        profession1:document.getElementById("characterProfession1").value.trim() || null,
+        profession2:document.getElementById("characterProfession2").value.trim() || null,
         is_main:document.getElementById("characterMain").checked
     };
+    if(characterImageUrl) row.character_image_url = characterImageUrl;
 
     if(!row.character_name) return;
 
