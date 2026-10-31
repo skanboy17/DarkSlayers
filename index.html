@@ -4,20 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>DARKSLAYERS | Gaming Community</title>
-<link rel="stylesheet" href="style.css?v=20261101-fix">
+<link rel="stylesheet" href="style.css?v=20261101-accountfix2">
 </head>
 <body>
 <div id="app"></div>
 <script>
-fetch('https://raw.githubusercontent.com/skanboy17/DarkSlayers/ccea91e8978e5791da5a2cabcf5b4ea0a721cdad/index.html')
-.then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text()})
-.then(html=>{
- const body=html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
- document.getElementById('app').innerHTML=body?body[1]:html;
- const scripts=[...document.getElementById('app').querySelectorAll('script')];
- scripts.forEach(old=>{const s=document.createElement('script');[...old.attributes].forEach(a=>s.setAttribute(a.name,a.value));s.textContent=old.textContent;old.replaceWith(s)});
-})
-.catch(e=>{document.getElementById('app').innerHTML='<div style="padding:40px;color:white;background:#050505;min-height:100vh;font-family:Arial"><h1 style="color:#d9272e">DARKSLAYERS</h1><p>Eroare la incarcarea site-ului.</p></div>';console.error(e)});
+(async function(){
+  const app=document.getElementById('app');
+  try {
+    const r=await fetch('https://raw.githubusercontent.com/skanboy17/DarkSlayers/ccea91e8978e5791da5a2cabcf5b4ea0a721cdad/index.html',{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const html=await r.text();
+    const body=html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    if(!body) throw new Error('Body missing');
+    const temp=document.createElement('div');
+    temp.innerHTML=body[1];
+    temp.querySelectorAll('script').forEach(s=>s.remove());
+    app.replaceWith(...Array.from(temp.childNodes));
+
+    function load(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.body.appendChild(s);});}
+    await load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
+    await load('script-base.js?v=20261101-accountfix2');
+    await load('script.js?v=20261101-accountfix2');
+  } catch(e) {
+    console.error(e);
+    document.body.innerHTML='<div style="padding:40px;color:white;background:#050505;min-height:100vh;font-family:Arial"><h1 style="color:#d9272e">DARKSLAYERS</h1><p>Eroare la incarcarea site-ului.</p></div>';
+  }
+})();
 </script>
 </body>
 </html>
