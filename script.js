@@ -902,8 +902,9 @@ document.addEventListener(
 
 
 /* =========================================
-   DARKSLAYERS ACCOUNT - SUPABASE AUTH
+   DARKSLAYERS ACCOUNT - SUPABASE AUTH + ROLES
 ========================================= */
+let DARKSLAYERS_CURRENT_PROFILE = null;
 
 function authMessage(message, type = "info") {
     const box = document.getElementById("authMessage");
@@ -912,11 +913,29 @@ function authMessage(message, type = "info") {
     box.className = "auth-message " + type;
 }
 
+async function getDarkSlayersUser() {
+    if (!darkslayersSupabase) return null;
+    const { data } = await darkslayersSupabase.auth.getUser();
+    return data?.user || null;
+}
+
+async function getDarkSlayersProfile(user) {
+    if (!darkslayersSupabase || !user) return null;
+    const { data, error } = await darkslayersSupabase
+        .from("profiles")
+        .select("id, display_name, role")
+        .eq("id", user.id)
+        .maybeSingle();
+    if (error) {
+        console.error("DARKSLAYERS profile:", error);
+        return null;
+    }
+    return data || null;
+}
+
 function openAccountModal(mode = "login") {
     openSiteModal({
-        icon: "♛",
-        label: "DARKSLAYERS",
-        title: "CONT",
+        icon: "♛", label: "DARKSLAYERS", title: "CONT",
         content: `
             <div class="auth-tabs">
                 <button id="authLoginTab" class="auth-tab active" onclick="showAuthLogin()">LOGIN</button>
@@ -924,156 +943,141 @@ function openAccountModal(mode = "login") {
             </div>
             <div id="authMessage" class="auth-message"></div>
             <form id="loginForm" class="auth-form" onsubmit="loginDarkSlayers(event)">
-                <label>Email</label>
-                <input id="loginEmail" type="email" autocomplete="email" required placeholder="email@exemplu.ro">
-                <label>Parola</label>
-                <input id="loginPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="Parola">
+                <label>Email</label><input id="loginEmail" type="email" autocomplete="email" required placeholder="email@exemplu.ro">
+                <label>Parola</label><input id="loginPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="Parola">
                 <button type="submit" class="auth-submit">INTRA IN CONT</button>
             </form>
             <form id="registerForm" class="auth-form" style="display:none" onsubmit="registerDarkSlayers(event)">
-                <label>Nume in joc</label>
-                <input id="registerName" type="text" required maxlength="30" placeholder="Ex: Skanners">
-                <label>Email</label>
-                <input id="registerEmail" type="email" autocomplete="email" required placeholder="email@exemplu.ro">
-                <label>Parola</label>
-                <input id="registerPassword" type="password" autocomplete="new-password" required minlength="6" placeholder="Minim 6 caractere">
+                <label>Nume in joc</label><input id="registerName" type="text" required maxlength="30" placeholder="Ex: Skanners">
+                <label>Email</label><input id="registerEmail" type="email" autocomplete="email" required placeholder="email@exemplu.ro">
+                <label>Parola</label><input id="registerPassword" type="password" autocomplete="new-password" required minlength="6" placeholder="Minim 6 caractere">
                 <button type="submit" class="auth-submit">CREEAZA CONT</button>
             </form>
             <div id="loggedInPanel" class="auth-logged" style="display:none">
-                <div class="modal-highlight">
-                    Esti conectat ca <strong id="loggedInEmail"></strong>
+                <div class="account-profile-card">
+                    <span id="loggedInRole" class="role-badge">MEMBER</span>
+                    <strong id="loggedInName">Membru DARKSLAYERS</strong>
+                    <small id="loggedInEmail"></small>
                 </div>
+                <button id="adminPanelButton" class="auth-submit admin-panel-button" style="display:none" onclick="openAdminPanel()">♛ ADMIN PANEL</button>
                 <button class="auth-submit auth-logout" onclick="logoutDarkSlayers()">LOGOUT</button>
-            </div>
-        `
+            </div>`
     });
     refreshAuthModal();
     if (mode === "register") showAuthRegister();
 }
 
 function showAuthLogin() {
-    const login = document.getElementById("loginForm");
-    const register = document.getElementById("registerForm");
-    const loginTab = document.getElementById("authLoginTab");
-    const registerTab = document.getElementById("authRegisterTab");
+    const login=document.getElementById("loginForm"), register=document.getElementById("registerForm");
     if (!login || !register) return;
-    login.style.display = "grid";
-    register.style.display = "none";
-    if (loginTab) loginTab.classList.add("active");
-    if (registerTab) registerTab.classList.remove("active");
-    authMessage("");
+    login.style.display="grid"; register.style.display="none";
+    document.getElementById("authLoginTab")?.classList.add("active");
+    document.getElementById("authRegisterTab")?.classList.remove("active"); authMessage("");
 }
-
 function showAuthRegister() {
-    const login = document.getElementById("loginForm");
-    const register = document.getElementById("registerForm");
-    const loginTab = document.getElementById("authLoginTab");
-    const registerTab = document.getElementById("authRegisterTab");
+    const login=document.getElementById("loginForm"), register=document.getElementById("registerForm");
     if (!login || !register) return;
-    login.style.display = "none";
-    register.style.display = "grid";
-    if (loginTab) loginTab.classList.remove("active");
-    if (registerTab) registerTab.classList.add("active");
-    authMessage("");
+    login.style.display="none"; register.style.display="grid";
+    document.getElementById("authLoginTab")?.classList.remove("active");
+    document.getElementById("authRegisterTab")?.classList.add("active"); authMessage("");
 }
 
 async function registerDarkSlayers(event) {
     event.preventDefault();
     if (!darkslayersSupabase) return authMessage("Conexiunea Supabase nu este disponibila.", "error");
-
-    const name = document.getElementById("registerName").value.trim();
-    const email = document.getElementById("registerEmail").value.trim();
-    const password = document.getElementById("registerPassword").value;
-
+    const name=document.getElementById("registerName").value.trim();
+    const email=document.getElementById("registerEmail").value.trim();
+    const password=document.getElementById("registerPassword").value;
     authMessage("Se creeaza contul...", "info");
-    const { data, error } = await darkslayersSupabase.auth.signUp({
-        email,
-        password,
-        options: { data: { display_name: name } }
-    });
-
+    const { data, error } = await darkslayersSupabase.auth.signUp({email,password,options:{data:{display_name:name}}});
     if (error) return authMessage(error.message, "error");
-
-    if (data.session) {
-        authMessage("Cont creat. Esti conectat!", "success");
-        await updateAccountButton();
-        setTimeout(refreshAuthModal, 250);
-    } else {
-        authMessage("Cont creat. Verifica emailul pentru confirmare, apoi fa login.", "success");
-    }
+    if (data.session) { authMessage("Cont creat. Esti conectat!", "success"); await updateAccountButton(); setTimeout(refreshAuthModal,250); }
+    else authMessage("Cont creat. Verifica emailul pentru confirmare, apoi fa login.", "success");
 }
 
 async function loginDarkSlayers(event) {
     event.preventDefault();
     if (!darkslayersSupabase) return authMessage("Conexiunea Supabase nu este disponibila.", "error");
-
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPassword").value;
-
+    const email=document.getElementById("loginEmail").value.trim(), password=document.getElementById("loginPassword").value;
     authMessage("Se face conectarea...", "info");
-    const { error } = await darkslayersSupabase.auth.signInWithPassword({ email, password });
-
+    const { error } = await darkslayersSupabase.auth.signInWithPassword({email,password});
     if (error) return authMessage("Email sau parola incorecta.", "error");
-
-    authMessage("Conectare reusita!", "success");
-    await updateAccountButton();
-    setTimeout(refreshAuthModal, 250);
+    authMessage("Conectare reusita!", "success"); await updateAccountButton(); setTimeout(refreshAuthModal,250);
 }
 
 async function logoutDarkSlayers() {
     if (!darkslayersSupabase) return;
-    await darkslayersSupabase.auth.signOut();
-    await updateAccountButton();
-    closeSiteModal();
-}
-
-async function getDarkSlayersUser() {
-    if (!darkslayersSupabase) return null;
-    const { data } = await darkslayersSupabase.auth.getUser();
-    return data?.user || null;
+    await darkslayersSupabase.auth.signOut(); DARKSLAYERS_CURRENT_PROFILE=null; await updateAccountButton(); closeSiteModal();
 }
 
 async function updateAccountButton() {
-    const button = document.getElementById("accountButton");
-    if (!button) return;
-    const user = await getDarkSlayersUser();
-
-    if (user) {
-        const displayName = user.user_metadata?.display_name || "CONTUL MEU";
-        button.textContent = displayName.toUpperCase();
-        button.classList.add("logged-in");
-    } else {
-        button.textContent = "CONT";
-        button.classList.remove("logged-in");
-    }
+    const button=document.getElementById("accountButton"); if (!button) return;
+    const user=await getDarkSlayersUser();
+    if (!user) { DARKSLAYERS_CURRENT_PROFILE=null; button.textContent="CONT"; button.classList.remove("logged-in","admin-account"); return; }
+    const profile=await getDarkSlayersProfile(user); DARKSLAYERS_CURRENT_PROFILE=profile;
+    const displayName=profile?.display_name || user.user_metadata?.display_name || "CONTUL MEU";
+    button.textContent=(profile?.role === "admin" ? "♛ " : "") + displayName.toUpperCase();
+    button.classList.add("logged-in"); button.classList.toggle("admin-account", profile?.role === "admin");
 }
 
 async function refreshAuthModal() {
-    const login = document.getElementById("loginForm");
-    const register = document.getElementById("registerForm");
-    const logged = document.getElementById("loggedInPanel");
-    const tabs = document.querySelector(".auth-tabs");
-    const email = document.getElementById("loggedInEmail");
+    const login=document.getElementById("loginForm"), register=document.getElementById("registerForm"), logged=document.getElementById("loggedInPanel");
     if (!login || !register || !logged) return;
+    const user=await getDarkSlayersUser();
+    if (!user) { logged.style.display="none"; document.querySelector(".auth-tabs")?.style.setProperty("display","flex"); return; }
+    const profile=await getDarkSlayersProfile(user); DARKSLAYERS_CURRENT_PROFILE=profile;
+    login.style.display="none"; register.style.display="none"; document.querySelector(".auth-tabs")?.style.setProperty("display","none"); logged.style.display="grid";
+    document.getElementById("loggedInEmail").textContent=user.email || "";
+    document.getElementById("loggedInName").textContent=profile?.display_name || user.user_metadata?.display_name || "Membru DARKSLAYERS";
+    const role=(profile?.role || "member").toUpperCase(); document.getElementById("loggedInRole").textContent=role;
+    document.getElementById("loggedInRole").className="role-badge role-" + role.toLowerCase();
+    document.getElementById("adminPanelButton").style.display=role === "ADMIN" ? "block" : "none";
+}
 
-    const user = await getDarkSlayersUser();
-    if (user) {
-        login.style.display = "none";
-        register.style.display = "none";
-        if (tabs) tabs.style.display = "none";
-        logged.style.display = "grid";
-        if (email) email.textContent = user.email || "";
-    } else {
-        logged.style.display = "none";
-        if (tabs) tabs.style.display = "flex";
-    }
+async function openAdminPanel() {
+    const user=await getDarkSlayersUser(), profile=await getDarkSlayersProfile(user);
+    if (!user || profile?.role !== "admin") return;
+    openSiteModal({icon:"♛",label:"DARKSLAYERS",title:"ADMIN PANEL",content:`
+        <div class="modal-highlight">Conectat ca <strong>${escapeHtml(profile.display_name || "Admin")}</strong> • ADMIN</div>
+        <h3>MEMBRI GUILDA</h3>
+        <form class="admin-member-form" onsubmit="adminAddMember(event)">
+            <input id="adminMemberName" required maxlength="30" placeholder="Nume">
+            <input id="adminMemberGame" maxlength="30" placeholder="Joc (Forever / WotLK)">
+            <input id="adminMemberClass" maxlength="30" placeholder="Clasa">
+            <select id="adminMemberRank"><option value="member">Member</option><option value="core">Core Raider</option><option value="veteran">Veteran</option><option value="officer">Officer</option><option value="gm">Guild Master</option></select>
+            <input id="adminMemberLevel" type="number" min="1" max="100" placeholder="Level">
+            <button class="auth-submit" type="submit">+ ADAUGA MEMBRU</button>
+        </form>
+        <div id="adminMemberMessage" class="auth-message"></div>
+        <div id="adminMembersList" class="admin-members-list">Se incarca...</div>`});
+    await adminLoadMembers();
+}
+
+function escapeHtml(value) { const d=document.createElement("div"); d.textContent=value ?? ""; return d.innerHTML; }
+
+async function adminLoadMembers() {
+    const box=document.getElementById("adminMembersList"); if (!box) return;
+    const {data,error}=await darkslayersSupabase.from("members").select("id,name,game,class,role,rank,level").order("name");
+    if (error) { box.textContent="Nu am putut incarca rosterul."; return; }
+    if (!data?.length) { box.innerHTML='<div class="admin-empty">Rosterul este gol.</div>'; return; }
+    box.innerHTML=data.map(m=>`<div class="admin-member-row"><div><strong>${escapeHtml(m.name)}</strong><span>${escapeHtml(m.class || "Clasa")} • ${escapeHtml(m.rank || "member")} ${m.level ? "• Lv. "+m.level : ""}</span></div><button onclick="adminDeleteMember(${Number(m.id)})">STERGE</button></div>`).join("");
+}
+
+async function adminAddMember(event) {
+    event.preventDefault(); const msg=document.getElementById("adminMemberMessage");
+    const row={name:document.getElementById("adminMemberName").value.trim(),game:document.getElementById("adminMemberGame").value.trim() || null,class:document.getElementById("adminMemberClass").value.trim() || null,role:"member",rank:document.getElementById("adminMemberRank").value,level:Number(document.getElementById("adminMemberLevel").value) || null};
+    const {error}=await darkslayersSupabase.from("members").insert(row);
+    if (error) { msg.textContent="Eroare: "+error.message; msg.className="auth-message error"; return; }
+    msg.textContent="Membru adaugat."; msg.className="auth-message success"; event.target.reset(); await adminLoadMembers();
+}
+
+async function adminDeleteMember(id) {
+    if (!confirm("Stergi acest membru din roster?")) return;
+    const {error}=await darkslayersSupabase.from("members").delete().eq("id",id);
+    if (error) return alert("Nu s-a putut sterge membrul."); await adminLoadMembers();
 }
 
 document.addEventListener("DOMContentLoaded", function () {
     updateAccountButton();
-    if (darkslayersSupabase) {
-        darkslayersSupabase.auth.onAuthStateChange(function () {
-            setTimeout(updateAccountButton, 0);
-        });
-    }
+    if (darkslayersSupabase) darkslayersSupabase.auth.onAuthStateChange(function(){ setTimeout(updateAccountButton,0); });
 });

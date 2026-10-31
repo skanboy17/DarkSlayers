@@ -1986,3 +1986,25 @@ body.modal-open {
 .auth-message { min-height:18px; margin-bottom:8px; font-size:13px; font-weight:700; }
 .auth-message.success { color:#6fe28a; } .auth-message.error { color:#ff6868; } .auth-message.info { color:#d8c7a0; }
 @media (max-width:1100px) { .account-area { margin-left:0; } .account-button { padding:0 10px; font-size:11px; } }
+
+
+/* DARKSLAYERS ADMIN PANEL */
+.account-button.admin-account { border-color:#d7a83b; color:#ffe39a; box-shadow:0 0 18px rgba(215,168,59,.22); }
+.account-profile-card { display:grid; gap:6px; padding:16px; background:rgba(8,8,10,.9); border:1px solid #4d1b1b; }
+.account-profile-card strong { font-size:18px; }
+.account-profile-card small { color:#999; }
+.role-badge { width:max-content; padding:5px 9px; border:1px solid #555; font-size:10px; font-weight:900; letter-spacing:1px; }
+.role-admin { color:#ffe39a; border-color:#b8892d; background:rgba(184,137,45,.12); }
+.role-officer { color:#ff7777; border-color:#8d2929; }
+.role-member { color:#bbb; }
+.admin-panel-button { border-color:#b8892d; background:linear-gradient(180deg,#7d5510,#3a2405); }
+.admin-member-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:12px 0; }
+.admin-member-form input,.admin-member-form select { width:100%; padding:11px; color:#fff; background:#080808; border:1px solid #542020; border-radius:4px; }
+.admin-member-form .auth-submit { grid-column:1/-1; }
+.admin-members-list { display:grid; gap:8px; margin-top:12px; }
+.admin-member-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; background:#080808; border:1px solid #351515; }
+.admin-member-row div { display:grid; gap:4px; }
+.admin-member-row span { color:#999; font-size:12px; }
+.admin-member-row button { padding:8px 10px; color:#ff7777; background:#160707; border:1px solid #6b2020; cursor:pointer; }
+.admin-empty { padding:14px; color:#999; border:1px dashed #3b2525; text-align:center; }
+@media(max-width:650px){ .admin-member-form{grid-template-columns:1fr;} }
