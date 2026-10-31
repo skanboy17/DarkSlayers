@@ -138,305 +138,149 @@ function filterRoster(rank, button) {
 
 
 /* =========================================
-   RAID PROGRESS
+   RAID PROGRESS - SUPABASE LIVE
 ========================================= */
 
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
-
-        const raids =
-            document.querySelectorAll(".raid");
-
-
-        raids.forEach(
-            function (raid, index) {
-
-                const progressText =
-                    raid.querySelector("p");
-
-
-                if (!progressText) {
-                    return;
-                }
-
-
-                const parts =
-                    progressText
-                        .textContent
-                        .trim()
-                        .split("/");
-
-
-                if (parts.length !== 2) {
-                    return;
-                }
-
-
-                const originalCurrent =
-                    parseInt(parts[0].trim());
-
-                const maxBosses =
-                    parseInt(parts[1].trim());
-
-
-                if (
-                    isNaN(originalCurrent) ||
-                    isNaN(maxBosses)
-                ) {
-                    return;
-                }
-
-
-                /* NUMELE RAIDULUI */
-
-                const raidNameElement =
-                    raid.querySelector("h3");
-
-
-                let raidName =
-                    "raid-" + index;
-
-
-                if (raidNameElement) {
-
-                    raidName =
-                        raidNameElement
-                            .textContent
-                            .trim()
-                            .toLowerCase()
-                            .replace(
-                                /[^a-z0-9]+/g,
-                                "-"
-                            );
-
-                }
-
-
-                /* EXPANSIUNEA */
-
-                let expansion = "unknown";
-
-
-                if (
-                    raid.closest(
-                        "#foreverRaids"
-                    )
-                ) {
-
-                    expansion = "forever";
-
-                }
-
-
-                if (
-                    raid.closest(
-                        "#wotlkRaids"
-                    )
-                ) {
-
-                    expansion = "wotlk";
-
-                }
-
-
-                const storageKey =
-                    "darkslayers-progress-" +
-                    expansion +
-                    "-" +
-                    raidName;
-
-
-                /* CITIM SALVAREA */
-
-                let currentBosses =
-                    parseInt(
-                        localStorage.getItem(
-                            storageKey
-                        )
-                    );
-
-
-                if (isNaN(currentBosses)) {
-
-                    currentBosses =
-                        originalCurrent;
-
-                }
-
-
-                if (currentBosses < 0) {
-                    currentBosses = 0;
-                }
-
-
-                if (
-                    currentBosses >
-                    maxBosses
-                ) {
-
-                    currentBosses =
-                        maxBosses;
-
-                }
-
-
-                /* CONTROALE */
-
-                const controls =
-                    document.createElement(
-                        "div"
-                    );
-
-                controls.className =
-                    "raid-progress";
-
-
-                const minusButton =
-                    document.createElement(
-                        "button"
-                    );
-
-                minusButton.className =
-                    "progress-button minus";
-
-                minusButton.textContent =
-                    "−";
-
-
-                const progressNumber =
-                    document.createElement(
-                        "span"
-                    );
-
-                progressNumber.className =
-                    "progress-number";
-
-
-                const plusButton =
-                    document.createElement(
-                        "button"
-                    );
-
-                plusButton.className =
-                    "progress-button plus";
-
-                plusButton.textContent =
-                    "+";
-
-
-                controls.appendChild(
-                    minusButton
-                );
-
-                controls.appendChild(
-                    progressNumber
-                );
-
-                controls.appendChild(
-                    plusButton
-                );
-
-
-                progressText.replaceWith(
-                    controls
-                );
-
-
-                /* ACTUALIZARE */
-
-                function updateProgress() {
-
-                    progressNumber.textContent =
-                        currentBosses +
-                        " / " +
-                        maxBosses;
-
-
-                    localStorage.setItem(
-                        storageKey,
-                        currentBosses
-                    );
-
-
-                    if (
-                        currentBosses ===
-                        maxBosses
-                    ) {
-
-                        raid.classList.add(
-                            "raid-completed"
-                        );
-
-                    } else {
-
-                        raid.classList.remove(
-                            "raid-completed"
-                        );
-
-                    }
-
-
-                    minusButton.disabled =
-                        currentBosses === 0;
-
-
-                    plusButton.disabled =
-                        currentBosses ===
-                        maxBosses;
-
-                }
-
-
-                /* MINUS */
-
-                minusButton.addEventListener(
-                    "click",
-                    function () {
-
-                        if (
-                            currentBosses > 0
-                        ) {
-
-                            currentBosses--;
-
-                            updateProgress();
-
-                        }
-
-                    }
-                );
-
-
-                /* PLUS */
-
-                plusButton.addEventListener(
-                    "click",
-                    function () {
-
-                        if (
-                            currentBosses <
-                            maxBosses
-                        ) {
-
-                            currentBosses++;
-
-                            updateProgress();
-
-                        }
-
-                    }
-                );
-
-
-                updateProgress();
-
-            }
-        );
-
+const DARKSLAYERS_RAID_KEYS = {
+    forever: {
+        "barrow deeps": "barrow-deeps",
+        "hyjal summit": "hyjal-summit",
+        "onyxia's lair": "onyxia-forever"
+    },
+    wotlk: {
+        "naxxramas": "naxxramas",
+        "obsidian sanctum": "obsidian-sanctum",
+        "eye of eternity": "eye-of-eternity",
+        "ulduar": "ulduar",
+        "trial of the crusader": "trial-of-the-crusader",
+        "onyxia's lair": "onyxia-wotlk",
+        "icecrown citadel": "icecrown-citadel",
+        "ruby sanctum": "ruby-sanctum"
     }
-);
+};
 
+async function getDarkSlayersRaidAdminStatus() {
+    if (!darkslayersSupabase) return false;
+    const { data: authData } = await darkslayersSupabase.auth.getUser();
+    const user = authData?.user;
+    if (!user) return false;
+
+    const { data: profile, error } = await darkslayersSupabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+    if (error) {
+        console.error("DARKSLAYERS raid admin check:", error);
+        return false;
+    }
+    return profile?.role === "admin";
+}
+
+async function loadDarkSlayersRaidProgress() {
+    if (!darkslayersSupabase) return;
+
+    const [{ data: rows, error }, isAdmin] = await Promise.all([
+        darkslayersSupabase
+            .from("raid_progress")
+            .select("raid_key, current_bosses, total_bosses"),
+        getDarkSlayersRaidAdminStatus()
+    ]);
+
+    if (error) {
+        console.error("DARKSLAYERS raid progress:", error);
+        return;
+    }
+
+    const progressByKey = new Map((rows || []).map(row => [row.raid_key, row]));
+
+    document.querySelectorAll(".raid").forEach(function (raid) {
+        const title = raid.querySelector("h3")?.textContent.trim();
+        if (!title) return;
+
+        const expansion = raid.closest("#foreverRaids") ? "forever" :
+                          raid.closest("#wotlkRaids") ? "wotlk" : null;
+        if (!expansion) return;
+
+        const raidKey = DARKSLAYERS_RAID_KEYS[expansion]?.[title.toLowerCase()];
+        if (!raidKey) return;
+
+        const row = progressByKey.get(raidKey);
+        if (!row) return;
+
+        let currentBosses = Number(row.current_bosses) || 0;
+        const maxBosses = Number(row.total_bosses) || 0;
+
+        const oldText = raid.querySelector("p");
+        const oldControls = raid.querySelector(".raid-progress");
+        if (oldControls) oldControls.remove();
+
+        const controls = document.createElement("div");
+        controls.className = "raid-progress";
+
+        const progressNumber = document.createElement("span");
+        progressNumber.className = "progress-number";
+
+        let minusButton = null;
+        let plusButton = null;
+
+        if (isAdmin) {
+            minusButton = document.createElement("button");
+            minusButton.className = "progress-button minus";
+            minusButton.textContent = "−";
+            minusButton.type = "button";
+
+            plusButton = document.createElement("button");
+            plusButton.className = "progress-button plus";
+            plusButton.textContent = "+";
+            plusButton.type = "button";
+
+            controls.appendChild(minusButton);
+        }
+
+        controls.appendChild(progressNumber);
+        if (plusButton) controls.appendChild(plusButton);
+
+        if (oldText) oldText.replaceWith(controls);
+        else raid.appendChild(controls);
+
+        function renderProgress() {
+            progressNumber.textContent = currentBosses + " / " + maxBosses;
+            raid.classList.toggle("raid-completed", currentBosses === maxBosses && maxBosses > 0);
+            if (minusButton) minusButton.disabled = currentBosses <= 0;
+            if (plusButton) plusButton.disabled = currentBosses >= maxBosses;
+        }
+
+        async function saveProgress(nextValue) {
+            if (!isAdmin) return;
+            const previousValue = currentBosses;
+            currentBosses = Math.max(0, Math.min(maxBosses, nextValue));
+            renderProgress();
+
+            const { error: updateError } = await darkslayersSupabase
+                .from("raid_progress")
+                .update({
+                    current_bosses: currentBosses,
+                    updated_at: new Date().toISOString()
+                })
+                .eq("raid_key", raidKey);
+
+            if (updateError) {
+                console.error("DARKSLAYERS raid update:", updateError);
+                currentBosses = previousValue;
+                renderProgress();
+                alert("Nu am putut salva progresul raidului.");
+            }
+        }
+
+        minusButton?.addEventListener("click", () => saveProgress(currentBosses - 1));
+        plusButton?.addEventListener("click", () => saveProgress(currentBosses + 1));
+        renderProgress();
+    });
+}
+
+document.addEventListener("DOMContentLoaded", loadDarkSlayersRaidProgress);
 
 /* =========================================
    MENIU ACTIV LA CLICK
