@@ -1048,7 +1048,9 @@ function renderDarkSlayersRoster(members) {
         const level = m.level ? " • Lv. " + Number(m.level) : "";
         return `
             <div class="roster-member ${m.user_id ? "roster-linked" : ""}" data-rank="${rank.key}" data-member-id="${Number(m.id)}">
-                <div class="roster-avatar">${rank.icon}</div>
+                <div class="roster-avatar roster-class-avatar" title="${escapeHtml(m.class || "Clasa")}">
+                    ${darkslayersClassIcon(m.class) ? darkslayersClassIconHtml(m.class, "roster-class-icon") : rank.icon}
+                </div>
                 <div class="roster-player">
                     <h3>${escapeHtml(m.name || "Member")} ${m.user_id ? '<small class="roster-linked-badge">CONT</small>' : ''}</h3>
                     <span>${escapeHtml(details)}${level}</span>
@@ -1130,45 +1132,62 @@ const DARKSLAYERS_WOW_CLASSES = {
         "Feral - Tank": "TANK",
         "Feral - DPS": "DPS",
         "Restoration": "HEALER"
-    },
-    "Skyborn": {
-        "Tank": "TANK",
-        "Healer": "HEALER",
-        "DPS": "DPS"
     }
 };
 
+
 const DARKSLAYERS_CLASS_ICONS = {
-    "Warrior": "images/classes/warrior.webp",
-    "Paladin": "images/classes/paladin.webp",
-    "Death Knight": "images/classes/death-knight.webp",
-    "Druid": "images/classes/druid.webp",
-    "Hunter": "images/classes/hunter.webp",
-    "Rogue": "images/classes/rogue.webp",
-    "Priest": "images/classes/priest.webp",
-    "Shaman": "images/classes/shaman.webp",
-    "Mage": "images/classes/mage.webp",
-    "Warlock": "images/classes/warlock.webp",
-    "Skyborn": "images/classes/skyborn.webp"
+    "Warrior": "images/classes/warrior.png",
+    "Paladin": "images/classes/paladin.png",
+    "Death Knight": "images/classes/death-knight.png",
+    "Druid": "images/classes/druid.png",
+    "Hunter": "images/classes/hunter.png",
+    "Rogue": "images/classes/rogue.png",
+    "Priest": "images/classes/priest.png",
+    "Shaman": "images/classes/shaman.png",
+    "Mage": "images/classes/mage.png",
+    "Warlock": "images/classes/warlock.png",
+    "Skyborn": "images/classes/skyborn.png"
 };
 
+if (!DARKSLAYERS_WOW_CLASSES["Skyborn"]) {
+    DARKSLAYERS_WOW_CLASSES["Skyborn"] = {
+        "Tank": "TANK",
+        "Healer": "HEALER",
+        "DPS": "DPS"
+    };
+}
+
 function darkslayersClassIcon(className){
-    return DARKSLAYERS_CLASS_ICONS[className] || DARKSLAYERS_CLASS_ICONS.Rogue;
+    return DARKSLAYERS_CLASS_ICONS[className] || "";
 }
 
-function renderCharacterClassPicker(selected){
-    return `<div class="ds-class-picker">${Object.keys(DARKSLAYERS_WOW_CLASSES).map(c => `
-        <button type="button" class="ds-class-choice ${c===selected ? "selected" : ""}" data-class="${escapeHtml(c)}" onclick="selectCharacterClass('${c.replace(/'/g,"\\'")}')">
-            <img src="${darkslayersClassIcon(c)}" alt="${escapeHtml(c)}">
-            <span>${escapeHtml(c)}</span>
-        </button>`).join("")}</div>`;
+function darkslayersClassIconHtml(className, extraClass = ""){
+    const src = darkslayersClassIcon(className);
+    if(!src) return "";
+    return `<img class="ds-class-icon ${extraClass}" src="${src}" alt="${escapeHtml(className || "Class")}">`;
 }
 
-function selectCharacterClass(className){
-    const classEl=document.getElementById("characterClass");
+function renderCharacterClassPicker(selectedClass){
+    return `<div class="ds-class-picker">
+        ${Object.keys(DARKSLAYERS_WOW_CLASSES).map(className => `
+            <button type="button"
+                class="ds-class-choice ${className === selectedClass ? "selected" : ""}"
+                data-class="${escapeHtml(className)}"
+                onclick="selectCharacterClass('${className.replace(/'/g, "\\'")}', this)">
+                ${darkslayersClassIconHtml(className)}
+                <span>${escapeHtml(className)}</span>
+            </button>
+        `).join("")}
+    </div>`;
+}
+
+function selectCharacterClass(className, button){
+    const classEl = document.getElementById("characterClass");
     if(!classEl) return;
-    classEl.value=className;
-    document.querySelectorAll(".ds-class-choice").forEach(btn => btn.classList.toggle("selected", btn.dataset.class===className));
+    classEl.value = className;
+    document.querySelectorAll(".ds-class-choice").forEach(el => el.classList.remove("selected"));
+    button?.classList.add("selected");
     updateCharacterSpecs();
 }
 
@@ -1222,9 +1241,11 @@ function darkslayersCharacterPortrait(c, className = ""){
     const url = c?.character_image_url ? escapeHtml(c.character_image_url) : "";
     const faction = String(c?.faction || "Horde").toLowerCase();
     const initial = escapeHtml((c?.character_name || "D").charAt(0).toUpperCase());
-    const classIcon = darkslayersClassIcon(c?.class || "Rogue");
+    const classIcon = darkslayersClassIcon(c?.class);
     return `<div class="ds-character-portrait ${faction} ${className}">
-        ${url ? `<img src="${url}" alt="${escapeHtml(c.character_name || "Character")}">` : `<img class="ds-class-portrait-icon" src="${classIcon}" alt="${escapeHtml(c?.class || "Class")}">`}
+        ${url ? `<img src="${url}" alt="${escapeHtml(c.character_name || "Character")}">` :
+          classIcon ? `<img class="ds-character-class-fallback" src="${classIcon}" alt="${escapeHtml(c?.class || "Class")}">` :
+          `<span>${initial}</span>`}
         <b>${escapeHtml(c?.faction || "Horde")}</b>
     </div>`;
 }
@@ -1254,6 +1275,11 @@ async function openMyProfile(){
     const profile = await getDarkSlayersProfile(user);
     const chars = await loadMyCharacters(user.id);
     const main = chars.find(c => c.is_main) || chars[0] || null;
+
+    // Keep linked MAIN in roster for every account role, including admin/officer.
+    if(main && main.is_main){
+        await syncMyMainCharacterToRoster();
+    }
 
     const charsHtml = chars.length ? chars.map(c => `
         <div class="ds-character-card ${c.is_main ? "is-main" : ""}">

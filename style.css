@@ -2139,16 +2139,76 @@ body.modal-open {
     }
 }
 
+
 /* =========================================
-   DARKSLAYERS - VISUAL CLASS PICKER
+   DARKSLAYERS CLASS ICON PICKER
 ========================================= */
-.ds-hidden-class-select{position:absolute!important;left:-9999px!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
-.ds-class-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:7px 0 15px}
-.ds-class-choice{position:relative;display:grid;grid-template-columns:48px 1fr;align-items:center;gap:9px;min-height:58px;padding:5px 8px;color:#eee;background:linear-gradient(135deg,#130505,#080808);border:1px solid #4b1719;border-radius:5px;cursor:pointer;text-align:left;transition:.18s;overflow:hidden}
-.ds-class-choice:after{content:"";position:absolute;inset:auto 0 0;height:2px;background:#b20d16;opacity:.45}
-.ds-class-choice:hover{transform:translateY(-1px);border-color:#a82b31;box-shadow:0 0 14px rgba(255,20,30,.12)}
-.ds-class-choice.selected{border-color:#ff3941;box-shadow:0 0 16px rgba(255,20,30,.26),inset 0 0 18px rgba(125,0,0,.18);background:linear-gradient(135deg,#260708,#090909)}
-.ds-class-choice img{width:48px;height:48px;object-fit:cover;border:1px solid #b36d28;box-shadow:0 0 8px rgba(255,126,25,.2)}
-.ds-class-choice span{font-family:Georgia,serif;font-size:13px;font-weight:800;line-height:1.1}
-.ds-class-portrait-icon{width:100%!important;height:100%!important;object-fit:cover!important;filter:saturate(1.08) contrast(1.03)}
-@media(max-width:760px){.ds-class-picker{grid-template-columns:repeat(2,minmax(0,1fr))}.ds-class-choice{grid-template-columns:42px 1fr}.ds-class-choice img{width:42px;height:42px}}
+.ds-hidden-class-select{display:none!important}
+.ds-class-picker{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:10px;
+    margin:4px 0 8px;
+}
+.ds-class-choice{
+    min-height:118px;
+    padding:8px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    color:#ddd;
+    background:linear-gradient(180deg,#120707,#070707);
+    border:1px solid #542020;
+    border-radius:4px;
+    cursor:pointer;
+    transition:.18s ease;
+}
+.ds-class-choice:hover{
+    transform:translateY(-2px);
+    border-color:#c42b32;
+    box-shadow:0 0 18px rgba(210,25,35,.18);
+}
+.ds-class-choice.selected{
+    color:#fff;
+    border-color:#ff3b43;
+    background:linear-gradient(180deg,#2b090b,#0b0606);
+    box-shadow:0 0 0 1px rgba(255,55,65,.25),0 0 22px rgba(220,20,30,.28);
+}
+.ds-class-choice .ds-class-icon{
+    width:72px;
+    height:72px;
+    object-fit:cover;
+    border:1px solid #a44b24;
+    box-shadow:0 0 12px rgba(255,80,20,.18);
+}
+.ds-class-choice span{
+    font-size:11px;
+    font-weight:900;
+    letter-spacing:.4px;
+}
+.ds-character-class-fallback{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+}
+.roster-class-avatar{
+    overflow:hidden;
+    padding:0!important;
+    background:#090505!important;
+}
+.roster-class-avatar .roster-class-icon{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+}
+@media(max-width:750px){
+    .ds-class-picker{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .ds-class-choice{min-height:100px}
+    .ds-class-choice .ds-class-icon{width:58px;height:58px}
+}
+@media(max-width:480px){
+    .ds-class-picker{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
