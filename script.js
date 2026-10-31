@@ -834,7 +834,14 @@ async function registerDarkSlayers(event) {
     const email=document.getElementById("registerEmail").value.trim();
     const password=document.getElementById("registerPassword").value;
     authMessage("Se creeaza contul...", "info");
-    const { data, error } = await darkslayersSupabase.auth.signUp({email,password,options:{data:{display_name:name}}});
+    const { data, error } = await darkslayersSupabase.auth.signUp({
+        email,
+        password,
+        options: {
+            data: { display_name: name },
+            emailRedirectTo: "https://skanboy17.github.io/DarkSlayers/"
+        }
+    });
     if (error) return authMessage(error.message, "error");
     if (data.session) { authMessage("Cont creat. Esti conectat!", "success"); await updateAccountButton(); setTimeout(refreshAuthModal,250); }
     else authMessage("Cont creat. Verifica emailul pentru confirmare, apoi fa login.", "success");
