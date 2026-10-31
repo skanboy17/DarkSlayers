@@ -1861,11 +1861,16 @@ document.addEventListener("DOMContentLoaded",loadForumTopics);
 ========================================= */
 async function getAvatarModerationStatus(){
     const user = await getDarkSlayersUser();
-    if(!user) return { canModerate:false, user:null };
-    const profile = await getDarkSlayersProfile(user.id);
+    if(!user) return { canModerate:false, user:null, profile:null };
+
+    const profile = await getDarkSlayersProfile(user);
+
     return {
-        canModerate: ["admin","officer"].includes(profile?.role),
-        user
+        canModerate: ["admin","officer"].includes(
+            String(profile?.role || "").toLowerCase()
+        ),
+        user,
+        profile
     };
 }
 
