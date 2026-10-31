@@ -1960,3 +1960,29 @@ body.modal-open {
         object-fit: contain;
     }
 }
+
+
+
+/* =========================================
+   DARKSLAYERS ACCOUNT / AUTH
+========================================= */
+.account-area { display:flex; align-items:center; margin-left:auto; margin-right:10px; }
+.account-button {
+    border:1px solid rgba(214,46,46,.75); background:linear-gradient(180deg,rgba(105,12,12,.92),rgba(34,5,5,.96));
+    color:#f2e7e7; min-height:40px; padding:0 15px; border-radius:4px; font-weight:800; letter-spacing:1px;
+    cursor:pointer; box-shadow:0 0 16px rgba(196,20,20,.18);
+}
+.account-button:hover,.account-button.logged-in { border-color:#ef3d3d; box-shadow:0 0 20px rgba(225,35,35,.32); }
+.auth-tabs { display:flex; gap:8px; margin-bottom:18px; }
+.auth-tab { flex:1; padding:11px 12px; border:1px solid rgba(180,40,40,.45); background:rgba(12,12,14,.9); color:#aaa; font-weight:800; cursor:pointer; }
+.auth-tab.active { color:#fff; border-color:#d42d2d; background:rgba(100,10,10,.7); }
+.auth-form,.auth-logged { display:grid; gap:10px; }
+.auth-form label { color:#ddd; font-size:13px; font-weight:700; letter-spacing:.5px; margin-top:4px; }
+.auth-form input { width:100%; box-sizing:border-box; padding:12px 13px; color:#fff; background:rgba(4,4,6,.92); border:1px solid rgba(150,35,35,.55); border-radius:4px; outline:none; }
+.auth-form input:focus { border-color:#e43b3b; box-shadow:0 0 0 2px rgba(228,59,59,.12); }
+.auth-submit { margin-top:10px; padding:12px 16px; border:1px solid #d83434; border-radius:4px; background:linear-gradient(180deg,#a51919,#5b0b0b); color:white; font-weight:900; letter-spacing:.8px; cursor:pointer; }
+.auth-submit:hover { filter:brightness(1.12); }
+.auth-logout { background:linear-gradient(180deg,#4a4a4a,#222); border-color:#666; }
+.auth-message { min-height:18px; margin-bottom:8px; font-size:13px; font-weight:700; }
+.auth-message.success { color:#6fe28a; } .auth-message.error { color:#ff6868; } .auth-message.info { color:#d8c7a0; }
+@media (max-width:1100px) { .account-area { margin-left:0; } .account-button { padding:0 10px; font-size:11px; } }
