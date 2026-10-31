@@ -1068,7 +1068,6 @@ const DARKSLAYERS_FORUM_CATEGORIES = [
     "Ghiduri & Build-uri",
     "Sugestii"
 ];
-
 const DARKSLAYERS_FORUM_PAGE_SIZE = 10;
 let DARKSLAYERS_FORUM_PAGE = 1;
 
