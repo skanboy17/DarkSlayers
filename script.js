@@ -1130,8 +1130,47 @@ const DARKSLAYERS_WOW_CLASSES = {
         "Feral - Tank": "TANK",
         "Feral - DPS": "DPS",
         "Restoration": "HEALER"
+    },
+    "Skyborn": {
+        "Tank": "TANK",
+        "Healer": "HEALER",
+        "DPS": "DPS"
     }
 };
+
+const DARKSLAYERS_CLASS_ICONS = {
+    "Warrior": "images/classes/warrior.webp",
+    "Paladin": "images/classes/paladin.webp",
+    "Death Knight": "images/classes/death-knight.webp",
+    "Druid": "images/classes/druid.webp",
+    "Hunter": "images/classes/hunter.webp",
+    "Rogue": "images/classes/rogue.webp",
+    "Priest": "images/classes/priest.webp",
+    "Shaman": "images/classes/shaman.webp",
+    "Mage": "images/classes/mage.webp",
+    "Warlock": "images/classes/warlock.webp",
+    "Skyborn": "images/classes/skyborn.webp"
+};
+
+function darkslayersClassIcon(className){
+    return DARKSLAYERS_CLASS_ICONS[className] || DARKSLAYERS_CLASS_ICONS.Rogue;
+}
+
+function renderCharacterClassPicker(selected){
+    return `<div class="ds-class-picker">${Object.keys(DARKSLAYERS_WOW_CLASSES).map(c => `
+        <button type="button" class="ds-class-choice ${c===selected ? "selected" : ""}" data-class="${escapeHtml(c)}" onclick="selectCharacterClass('${c.replace(/'/g,"\\'")}')">
+            <img src="${darkslayersClassIcon(c)}" alt="${escapeHtml(c)}">
+            <span>${escapeHtml(c)}</span>
+        </button>`).join("")}</div>`;
+}
+
+function selectCharacterClass(className){
+    const classEl=document.getElementById("characterClass");
+    if(!classEl) return;
+    classEl.value=className;
+    document.querySelectorAll(".ds-class-choice").forEach(btn => btn.classList.toggle("selected", btn.dataset.class===className));
+    updateCharacterSpecs();
+}
 
 const DARKSLAYERS_PROFILE_FRAMES = {
     "blood": "BLOOD",
@@ -1183,8 +1222,9 @@ function darkslayersCharacterPortrait(c, className = ""){
     const url = c?.character_image_url ? escapeHtml(c.character_image_url) : "";
     const faction = String(c?.faction || "Horde").toLowerCase();
     const initial = escapeHtml((c?.character_name || "D").charAt(0).toUpperCase());
+    const classIcon = darkslayersClassIcon(c?.class || "Rogue");
     return `<div class="ds-character-portrait ${faction} ${className}">
-        ${url ? `<img src="${url}" alt="${escapeHtml(c.character_name || "Character")}">` : `<span>${initial}</span>`}
+        ${url ? `<img src="${url}" alt="${escapeHtml(c.character_name || "Character")}">` : `<img class="ds-class-portrait-icon" src="${classIcon}" alt="${escapeHtml(c?.class || "Class")}">`}
         <b>${escapeHtml(c?.faction || "Horde")}</b>
     </div>`;
 }
@@ -1424,6 +1464,7 @@ async function openCharacterEditor(characterId = null){
                 <select id="characterGame">
                     <option ${character?.game==="Forever" ? "selected" : ""}>Forever</option>
                     <option ${character?.game==="WotLK" ? "selected" : ""}>WotLK</option>
+                    <option ${character?.game==="Skyborn" ? "selected" : ""}>Skyborn</option>
                 </select>
 
                 <label>FACTIUNE</label>
@@ -1433,7 +1474,8 @@ async function openCharacterEditor(characterId = null){
                 </select>
 
                 <label>CLASA</label>
-                <select id="characterClass" onchange="updateCharacterSpecs()">
+                ${renderCharacterClassPicker(className)}
+                <select id="characterClass" class="ds-hidden-class-select" onchange="updateCharacterSpecs()">
                     ${Object.keys(DARKSLAYERS_WOW_CLASSES).map(c => `<option ${c===className ? "selected" : ""}>${c}</option>`).join("")}
                 </select>
 
