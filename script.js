@@ -1058,11 +1058,16 @@ document.addEventListener("DOMContentLoaded", function () {
     updateAccountButton();
     if (darkslayersSupabase) darkslayersSupabase.auth.onAuthStateChange(function(){ setTimeout(updateAccountButton,0); });
 });
+// DARKSLAYERS FORUM
 
-
-/* =========================================
-   DARKSLAYERS FORUM
-========================================= */
+const DARKSLAYERS_FORUM_CATEGORIES = [
+    "General",
+    "Raiduri & Dungeon-uri",
+    "WoW Forever",
+    "WotLK",
+    "Ghiduri & Build-uri",
+    "Sugestii"
+];
 const DARKSLAYERS_FORUM_CATEGORIES = ["General","Raiduri & Dungeon-uri","WoW Forever","WotLK","Ghiduri & Build-uri","Sugestii"];
 function forumDate(value){ try{return new Date(value).toLocaleString("ro-RO",{dateStyle:"medium",timeStyle:"short"});}catch{return "";} }
 async function forumContext(){
