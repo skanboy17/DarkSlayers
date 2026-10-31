@@ -806,11 +806,7 @@ function openAccountModal(mode = "login") {
                 <button id="adminPanelButton" class="auth-submit admin-panel-button" style="display:none" onclick="openAdminPanel()">♛ ADMIN PANEL</button>
                 <button id="officerPanelButton" class="auth-submit admin-panel-button" style="display:none" onclick="openOfficerPanel()">⚔ OFFICER PANEL</button>
                 <button class="auth-submit profile-panel-button" onclick="openMyProfile()">👤 PROFILUL MEU</button>
-            ${["admin","officer"].includes(profile?.role) ? `
-                <button type="button" class="modal-link" onclick="openAvatarModeration()">🛡 MODERARE AVATARE</button>
-            ` : ""}
-
-                <button class="auth-submit auth-logout" onclick="logoutDarkSlayers()">LOGOUT</button>
+<button class="auth-submit auth-logout" onclick="logoutDarkSlayers()">LOGOUT</button>
             </div>`
     });
     refreshAuthModal();
@@ -898,6 +894,13 @@ async function openAdminPanel() {
     if (!user || profile?.role !== "admin") return;
     openSiteModal({icon:"♛",label:"DARKSLAYERS",title:"ADMIN PANEL",content:`
         <div class="modal-highlight">Conectat ca <strong>${escapeHtml(profile.display_name || "Admin")}</strong> • ADMIN</div>
+        <div class="staff-avatar-panel">
+            <div>
+                <strong>🖼 AVATARE DE APROBAT</strong>
+                <span>Verifica pozele trimise de membri inainte sa devina publice.</span>
+            </div>
+            <button type="button" class="auth-submit avatar-moderation-button" onclick="openAvatarModeration()">DESCHIDE MODERAREA</button>
+        </div>
         <h3 id="adminFormTitle">ADAUGA MEMBRU</h3>
         <form class="admin-member-form" onsubmit="adminSaveMember(event)">
             <input id="adminMemberId" type="hidden">
@@ -923,6 +926,13 @@ async function openOfficerPanel() {
 
     openSiteModal({icon:"⚔",label:"DARKSLAYERS",title:"OFFICER PANEL",content:`
         <div class="modal-highlight">Conectat ca <strong>${escapeHtml(profile.display_name || "Officer")}</strong> • OFFICER</div>
+        <div class="staff-avatar-panel">
+            <div>
+                <strong>🖼 AVATARE DE APROBAT</strong>
+                <span>Verifica pozele trimise de membri inainte sa devina publice.</span>
+            </div>
+            <button type="button" class="auth-submit avatar-moderation-button" onclick="openAvatarModeration()">DESCHIDE MODERAREA</button>
+        </div>
         <div class="modal-highlight">Poti adauga si edita membri. Stergerea membrilor ramane disponibila doar pentru Admin.</div>
         <h3 id="adminFormTitle">ADAUGA MEMBRU</h3>
         <form class="admin-member-form" onsubmit="adminSaveMember(event)">

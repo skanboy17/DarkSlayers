@@ -2101,3 +2101,40 @@ body.modal-open {
 .modal-link.danger{
     border-color:#7b2020;
 }
+
+
+/* STAFF PANEL - AVATAR MODERATION ENTRY */
+.staff-avatar-panel{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin:14px 0 20px;
+    padding:14px;
+    background:linear-gradient(180deg,#100909,#080606);
+    border:1px solid #5a1b1b;
+}
+.staff-avatar-panel strong{
+    display:block;
+    margin-bottom:5px;
+    color:#fff;
+}
+.staff-avatar-panel span{
+    color:#aaa;
+    font-size:12px;
+    line-height:1.45;
+}
+.avatar-moderation-button{
+    width:auto;
+    min-width:190px;
+    margin:0;
+}
+@media (max-width:700px){
+    .staff-avatar-panel{
+        align-items:stretch;
+        flex-direction:column;
+    }
+    .avatar-moderation-button{
+        width:100%;
+    }
+}
