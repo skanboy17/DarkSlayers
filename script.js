@@ -767,7 +767,7 @@ async function getDarkSlayersProfile(user) {
     if (!darkslayersSupabase || !user) return null;
     const { data, error } = await darkslayersSupabase
         .from("profiles")
-        .select("id, display_name, role")
+        .select("id, display_name, role, avatar_url, avatar_frame, profile_title")
         .eq("id", user.id)
         .maybeSingle();
     if (error) {
@@ -805,6 +805,7 @@ function openAccountModal(mode = "login") {
                 </div>
                 <button id="adminPanelButton" class="auth-submit admin-panel-button" style="display:none" onclick="openAdminPanel()">♛ ADMIN PANEL</button>
                 <button id="officerPanelButton" class="auth-submit admin-panel-button" style="display:none" onclick="openOfficerPanel()">⚔ OFFICER PANEL</button>
+                <button class="auth-submit profile-panel-button" onclick="openMyProfile()">👤 PROFILUL MEU</button>
                 <button class="auth-submit auth-logout" onclick="logoutDarkSlayers()">LOGOUT</button>
             </div>`
     });
@@ -1058,6 +1059,490 @@ document.addEventListener("DOMContentLoaded", function () {
     updateAccountButton();
     if (darkslayersSupabase) darkslayersSupabase.auth.onAuthStateChange(function(){ setTimeout(updateAccountButton,0); });
 });
+
+
+/* =========================================
+   DARKSLAYERS - PROFILE + WOW CHARACTERS
+========================================= */
+
+const DARKSLAYERS_WOW_CLASSES = {
+    "Warrior": {
+        "Arms": "DPS",
+        "Fury": "DPS",
+        "Protection": "TANK"
+    },
+    "Paladin": {
+        "Holy": "HEALER",
+        "Protection": "TANK",
+        "Retribution": "DPS"
+    },
+    "Hunter": {
+        "Beast Mastery": "DPS",
+        "Marksmanship": "DPS",
+        "Survival": "DPS"
+    },
+    "Rogue": {
+        "Assassination": "DPS",
+        "Combat": "DPS",
+        "Subtlety": "DPS"
+    },
+    "Priest": {
+        "Discipline": "HEALER",
+        "Holy": "HEALER",
+        "Shadow": "DPS"
+    },
+    "Death Knight": {
+        "Blood": "TANK",
+        "Frost": "DPS",
+        "Unholy": "DPS"
+    },
+    "Shaman": {
+        "Elemental": "DPS",
+        "Enhancement": "DPS",
+        "Restoration": "HEALER"
+    },
+    "Mage": {
+        "Arcane": "DPS",
+        "Fire": "DPS",
+        "Frost": "DPS"
+    },
+    "Warlock": {
+        "Affliction": "DPS",
+        "Demonology": "DPS",
+        "Destruction": "DPS"
+    },
+    "Druid": {
+        "Balance": "DPS",
+        "Feral - Tank": "TANK",
+        "Feral - DPS": "DPS",
+        "Restoration": "HEALER"
+    }
+};
+
+const DARKSLAYERS_PROFILE_FRAMES = {
+    "blood": "BLOOD",
+    "horde": "HORDE",
+    "shadow": "SHADOW",
+    "gold": "GOLD"
+};
+
+function darkslayersRoleIcon(role){
+    const r = String(role || "member").toLowerCase();
+    if(r === "admin") return "♛";
+    if(r === "officer") return "🛡";
+    return "⚔";
+}
+
+function darkslayersCombatRoleIcon(role){
+    const r = String(role || "DPS").toUpperCase();
+    if(r === "TANK") return "🛡";
+    if(r === "HEALER") return "✚";
+    return "⚔";
+}
+
+function darkslayersAvatarHtml(profile, sizeClass = ""){
+    const frame = escapeHtml(profile?.avatar_frame || "blood");
+    const url = profile?.avatar_url ? escapeHtml(profile.avatar_url) : "";
+    const initial = escapeHtml((profile?.display_name || "D").charAt(0).toUpperCase());
+    return `<div class="ds-avatar ds-frame-${frame} ${sizeClass}">
+        ${url ? `<img src="${url}" alt="Avatar">` : `<span>${initial}</span>`}
+        <i class="ds-rank-corner">${darkslayersRoleIcon(profile?.role)}</i>
+    </div>`;
+}
+
+async function loadMyCharacters(userId){
+    if(!darkslayersSupabase || !userId) return [];
+    const {data,error} = await darkslayersSupabase
+        .from("characters")
+        .select("id,created_at,user_id,character_name,game,faction,class,spec,combat_role,level,is_main")
+        .eq("user_id", userId)
+        .order("is_main", {ascending:false})
+        .order("character_name", {ascending:true});
+    if(error){
+        console.error("DARKSLAYERS characters:", error);
+        return [];
+    }
+    return data || [];
+}
+
+async function openMyProfile(){
+    const user = await getDarkSlayersUser();
+    if(!user){
+        openAccountModal("login");
+        return;
+    }
+
+    const profile = await getDarkSlayersProfile(user);
+    const chars = await loadMyCharacters(user.id);
+    const main = chars.find(c => c.is_main) || chars[0] || null;
+
+    const charsHtml = chars.length ? chars.map(c => `
+        <div class="ds-character-card ${c.is_main ? "is-main" : ""}">
+            <div class="ds-character-icon">${darkslayersCombatRoleIcon(c.combat_role)}</div>
+            <div class="ds-character-info">
+                <strong>${escapeHtml(c.character_name)}</strong>
+                <span>${escapeHtml(c.class)} • ${escapeHtml(c.spec || "Fara spec")} • ${escapeHtml(c.combat_role || "DPS")}</span>
+                <small>${escapeHtml(c.game)} • ${escapeHtml(c.faction)}${c.level ? " • Lv. " + Number(c.level) : ""}${c.is_main ? " • ⭐ MAIN" : ""}</small>
+            </div>
+            <div class="ds-character-actions">
+                ${!c.is_main ? `<button type="button" onclick="setMainCharacter(${Number(c.id)})">⭐ MAIN</button>` : ""}
+                <button type="button" onclick="editMyCharacter(${Number(c.id)})">EDITEAZA</button>
+                <button type="button" class="danger" onclick="deleteMyCharacter(${Number(c.id)})">STERGE</button>
+            </div>
+        </div>
+    `).join("") : '<div class="forum-empty">Nu ai adaugat niciun caracter.</div>';
+
+    openSiteModal({
+        icon:"👤",
+        label:"DARKSLAYERS",
+        title:"PROFILUL MEU",
+        content:`
+            <div class="ds-profile-hero">
+                ${darkslayersAvatarHtml(profile, "ds-avatar-large")}
+                <div class="ds-profile-summary">
+                    <span class="role-badge role-${escapeHtml(profile?.role || "member")}">${escapeHtml((profile?.role || "member").toUpperCase())}</span>
+                    <h3>${escapeHtml(profile?.display_name || user.user_metadata?.display_name || "Membru")}</h3>
+                    <p>${escapeHtml(profile?.profile_title || "Membru DARKSLAYERS")}</p>
+                    ${main ? `<small>⭐ MAIN: ${escapeHtml(main.character_name)} • ${escapeHtml(main.class)} • ${escapeHtml(main.spec || "")} • ${escapeHtml(main.combat_role || "DPS")}</small>` : ""}
+                </div>
+            </div>
+
+            <div class="ds-profile-buttons">
+                <button class="auth-submit" type="button" onclick="openProfileSettings()">🖼 AVATAR & PROFIL</button>
+                <button class="auth-submit" type="button" onclick="openCharacterEditor()">+ ADAUGA CARACTER</button>
+            </div>
+
+            <h3 class="ds-section-title">CARACTERELE MELE</h3>
+            <div class="ds-character-list">${charsHtml}</div>
+        `
+    });
+}
+
+async function openProfileSettings(){
+    const user = await getDarkSlayersUser();
+    if(!user) return;
+    const profile = await getDarkSlayersProfile(user);
+
+    openSiteModal({
+        icon:"🖼",
+        label:"PROFIL",
+        title:"AVATAR & STIL",
+        content:`
+            <div class="ds-profile-settings-preview">
+                ${darkslayersAvatarHtml(profile, "ds-avatar-large")}
+            </div>
+            <form class="forum-form" onsubmit="saveProfileSettings(event)">
+                <label>NUME AFISAT</label>
+                <input id="profileDisplayName" maxlength="30" required value="${escapeHtml(profile?.display_name || "")}">
+
+                <label>TITLU</label>
+                <select id="profileTitle">
+                    ${["Membru DARKSLAYERS","Raider","PvP Fighter","Dungeon Hunter","Guild Veteran"].map(x => `<option ${profile?.profile_title===x ? "selected" : ""}>${x}</option>`).join("")}
+                </select>
+
+                <label>RAMA AVATAR</label>
+                <select id="profileFrame">
+                    ${Object.entries(DARKSLAYERS_PROFILE_FRAMES).map(([key,label]) => `<option value="${key}" ${profile?.avatar_frame===key ? "selected" : ""}>${label}</option>`).join("")}
+                </select>
+
+                <label>INCARCA AVATAR</label>
+                <input id="profileAvatarFile" type="file" accept="image/png,image/jpeg,image/webp">
+                <small class="ds-form-note">PNG, JPG sau WEBP. Maxim 2 MB.</small>
+
+                <button class="auth-submit" type="submit">SALVEAZA PROFILUL</button>
+            </form>
+        `
+    });
+}
+
+async function saveProfileSettings(event){
+    event.preventDefault();
+    const user = await getDarkSlayersUser();
+    if(!user) return;
+
+    const displayName = document.getElementById("profileDisplayName").value.trim();
+    const profileTitle = document.getElementById("profileTitle").value;
+    const avatarFrame = document.getElementById("profileFrame").value;
+    const file = document.getElementById("profileAvatarFile")?.files?.[0];
+
+    if(!displayName) return;
+
+    let avatarUrl = undefined;
+
+    if(file){
+        if(file.size > 2 * 1024 * 1024){
+            alert("Avatarul trebuie sa aiba maxim 2 MB.");
+            return;
+        }
+
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g,"");
+        const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+
+        const upload = await darkslayersSupabase.storage
+            .from("avatars")
+            .upload(path, file, {upsert:true, cacheControl:"3600"});
+
+        if(upload.error){
+            console.error(upload.error);
+            alert("Nu am putut incarca avatarul.");
+            return;
+        }
+
+        const publicData = darkslayersSupabase.storage.from("avatars").getPublicUrl(path);
+        avatarUrl = publicData.data.publicUrl;
+    }
+
+    const changes = {
+        display_name: displayName,
+        profile_title: profileTitle,
+        avatar_frame: avatarFrame
+    };
+    if(avatarUrl) changes.avatar_url = avatarUrl;
+
+    const {error} = await darkslayersSupabase
+        .from("profiles")
+        .update(changes)
+        .eq("id", user.id);
+
+    if(error){
+        console.error(error);
+        alert("Nu am putut salva profilul.");
+        return;
+    }
+
+    await updateAccountButton();
+    await openMyProfile();
+}
+
+function characterSpecOptions(className, selected = ""){
+    const specs = DARKSLAYERS_WOW_CLASSES[className] || {};
+    return Object.keys(specs).map(spec => `<option value="${escapeHtml(spec)}" ${spec===selected ? "selected" : ""}>${escapeHtml(spec)}</option>`).join("");
+}
+
+function updateCharacterSpecs(){
+    const classEl = document.getElementById("characterClass");
+    const specEl = document.getElementById("characterSpec");
+    const roleEl = document.getElementById("characterCombatRole");
+    if(!classEl || !specEl || !roleEl) return;
+    specEl.innerHTML = characterSpecOptions(classEl.value);
+    updateCharacterRole();
+}
+
+function updateCharacterRole(){
+    const classEl = document.getElementById("characterClass");
+    const specEl = document.getElementById("characterSpec");
+    const roleEl = document.getElementById("characterCombatRole");
+    if(!classEl || !specEl || !roleEl) return;
+    roleEl.value = DARKSLAYERS_WOW_CLASSES[classEl.value]?.[specEl.value] || "DPS";
+}
+
+async function openCharacterEditor(characterId = null){
+    const user = await getDarkSlayersUser();
+    if(!user) return;
+
+    let character = null;
+    if(characterId){
+        const {data,error} = await darkslayersSupabase
+            .from("characters")
+            .select("id,user_id,character_name,game,faction,class,spec,combat_role,level,is_main")
+            .eq("id", characterId)
+            .eq("user_id", user.id)
+            .maybeSingle();
+        if(error){ console.error(error); return; }
+        character = data;
+    }
+
+    const className = character?.class || "Rogue";
+    const spec = character?.spec || Object.keys(DARKSLAYERS_WOW_CLASSES[className] || {})[0] || "";
+
+    openSiteModal({
+        icon:"⚔",
+        label:"WOW CHARACTER",
+        title:character ? "EDITEAZA CARACTER" : "ADAUGA CARACTER",
+        content:`
+            <form class="forum-form" onsubmit="saveMyCharacter(event, ${character ? Number(character.id) : "null"})">
+                <label>NUME CARACTER</label>
+                <input id="characterName" maxlength="30" required value="${escapeHtml(character?.character_name || "")}" placeholder="Ex: Skanners">
+
+                <label>JOC</label>
+                <select id="characterGame">
+                    <option ${character?.game==="Forever" ? "selected" : ""}>Forever</option>
+                    <option ${character?.game==="WotLK" ? "selected" : ""}>WotLK</option>
+                </select>
+
+                <label>FACTIUNE</label>
+                <select id="characterFaction">
+                    <option ${character?.faction!=="Alliance" ? "selected" : ""}>Horde</option>
+                    <option ${character?.faction==="Alliance" ? "selected" : ""}>Alliance</option>
+                </select>
+
+                <label>CLASA</label>
+                <select id="characterClass" onchange="updateCharacterSpecs()">
+                    ${Object.keys(DARKSLAYERS_WOW_CLASSES).map(c => `<option ${c===className ? "selected" : ""}>${c}</option>`).join("")}
+                </select>
+
+                <label>SPEC</label>
+                <select id="characterSpec" onchange="updateCharacterRole()">
+                    ${characterSpecOptions(className, spec)}
+                </select>
+
+                <label>ROL</label>
+                <input id="characterCombatRole" readonly value="${escapeHtml(character?.combat_role || DARKSLAYERS_WOW_CLASSES[className]?.[spec] || "DPS")}">
+
+                <label>LEVEL</label>
+                <input id="characterLevel" type="number" min="1" max="100" value="${character?.level ? Number(character.level) : ""}" placeholder="80">
+
+                <label class="ds-check-row">
+                    <input id="characterMain" type="checkbox" ${character?.is_main ? "checked" : ""}>
+                    ⭐ SETEAZA CA MAIN CHARACTER
+                </label>
+
+                <button class="auth-submit" type="submit">SALVEAZA CARACTERUL</button>
+            </form>
+        `
+    });
+}
+
+function editMyCharacter(id){
+    openCharacterEditor(id);
+}
+
+async function saveMyCharacter(event, characterId){
+    event.preventDefault();
+    const user = await getDarkSlayersUser();
+    if(!user) return;
+
+    const row = {
+        user_id:user.id,
+        character_name:document.getElementById("characterName").value.trim(),
+        game:document.getElementById("characterGame").value,
+        faction:document.getElementById("characterFaction").value,
+        class:document.getElementById("characterClass").value,
+        spec:document.getElementById("characterSpec").value,
+        combat_role:document.getElementById("characterCombatRole").value,
+        level:Number(document.getElementById("characterLevel").value) || null,
+        is_main:document.getElementById("characterMain").checked
+    };
+
+    if(!row.character_name) return;
+
+    if(row.is_main){
+        const reset = await darkslayersSupabase
+            .from("characters")
+            .update({is_main:false})
+            .eq("user_id", user.id);
+        if(reset.error){
+            console.error(reset.error);
+            alert("Nu am putut seta caracterul MAIN.");
+            return;
+        }
+    }
+
+    let result;
+    if(characterId){
+        result = await darkslayersSupabase
+            .from("characters")
+            .update(row)
+            .eq("id", Number(characterId))
+            .eq("user_id", user.id);
+    } else {
+        result = await darkslayersSupabase.from("characters").insert(row);
+    }
+
+    if(result.error){
+        console.error(result.error);
+        alert("Nu am putut salva caracterul.");
+        return;
+    }
+
+    await openMyProfile();
+}
+
+async function setMainCharacter(id){
+    const user = await getDarkSlayersUser();
+    if(!user) return;
+
+    const reset = await darkslayersSupabase
+        .from("characters")
+        .update({is_main:false})
+        .eq("user_id", user.id);
+
+    if(reset.error){
+        console.error(reset.error);
+        return alert("Nu am putut schimba MAIN-ul.");
+    }
+
+    const result = await darkslayersSupabase
+        .from("characters")
+        .update({is_main:true})
+        .eq("id", Number(id))
+        .eq("user_id", user.id);
+
+    if(result.error){
+        console.error(result.error);
+        return alert("Nu am putut schimba MAIN-ul.");
+    }
+
+    await openMyProfile();
+}
+
+async function deleteMyCharacter(id){
+    if(!confirm("Stergi acest caracter?")) return;
+    const user = await getDarkSlayersUser();
+    if(!user) return;
+
+    const {error} = await darkslayersSupabase
+        .from("characters")
+        .delete()
+        .eq("id", Number(id))
+        .eq("user_id", user.id);
+
+    if(error){
+        console.error(error);
+        alert("Nu am putut sterge caracterul.");
+        return;
+    }
+
+    await openMyProfile();
+}
+
+async function loadForumPublicProfiles(userIds){
+    if(!userIds?.length) return new Map();
+
+    const [{data:profiles}, {data:characters}] = await Promise.all([
+        darkslayersSupabase
+            .from("profiles")
+            .select("id,display_name,role,avatar_url,avatar_frame,profile_title")
+            .in("id", userIds),
+        darkslayersSupabase
+            .from("characters")
+            .select("user_id,character_name,class,spec,combat_role,level,faction,game,is_main")
+            .in("user_id", userIds)
+            .eq("is_main", true)
+    ]);
+
+    const cmap = new Map((characters || []).map(c => [c.user_id, c]));
+    return new Map((profiles || []).map(p => [p.id, {...p, main_character:cmap.get(p.id) || null}]));
+}
+
+function forumAuthorHtml(profile){
+    const p = profile || {};
+    const c = p.main_character;
+    const details = c
+        ? `${escapeHtml(c.class)} • ${escapeHtml(c.spec || "")} • ${darkslayersCombatRoleIcon(c.combat_role)} ${escapeHtml(c.combat_role || "DPS")}${c.level ? " • Lv. " + Number(c.level) : ""}`
+        : escapeHtml(p.profile_title || "Membru DARKSLAYERS");
+
+    return `<div class="ds-forum-author">
+        ${darkslayersAvatarHtml(p, "ds-avatar-small")}
+        <div>
+            <strong>${escapeHtml(p.display_name || "Membru")}</strong>
+            <span>${escapeHtml((p.role || "member").toUpperCase())}</span>
+            <small>${details}</small>
+        </div>
+    </div>`;
+}
+
+
 // DARKSLAYERS FORUM
 
 const DARKSLAYERS_FORUM_CATEGORIES = [
@@ -1122,12 +1607,7 @@ async function loadForumTopics(page = DARKSLAYERS_FORUM_PAGE){
     }
 
     const ids = [...new Set(topics.map(x => x.author_id))];
-    let profiles = [];
-    if(ids.length){
-        const r = await darkslayersSupabase.from("profiles").select("id,display_name,role").in("id",ids);
-        profiles = r.data || [];
-    }
-    const pmap = new Map(profiles.map(p => [p.id,p]));
+    const pmap = await loadForumPublicProfiles(ids);
 
     if(!topics.length){
         box.innerHTML = '<div class="forum-empty">Nu exista subiecte inca. Fii primul care scrie!</div>';
@@ -1140,7 +1620,7 @@ async function loadForumTopics(page = DARKSLAYERS_FORUM_PAGE){
             <span class="forum-topic-category">${t.pinned ? "📌 " : ""}${escapeHtml(t.category)}</span>
             <span class="forum-topic-main">
                 <strong>${t.pinned ? "📌 " : ""}${escapeHtml(t.title)}</strong>
-                <small>de ${escapeHtml(p.display_name||"Membru")} • ${(p.role||"member").toUpperCase()} • ${forumDate(t.created_at)}</small>
+                <small>de ${escapeHtml(p.display_name||"Membru")} • ${(p.role||"member").toUpperCase()}${p.main_character ? " • " + escapeHtml(p.main_character.class) + " • " + escapeHtml(p.main_character.spec || "") : ""} • ${forumDate(t.created_at)}</small>
             </span>
             <span class="forum-topic-arrow">→</span>
         </button>`;
@@ -1201,12 +1681,7 @@ async function openForumTopic(id){
     const replies=rr.data||[];
 
     const ids=[...new Set([t.author_id,...replies.map(r=>r.author_id)])];
-    let ps=[];
-    if(ids.length){
-        const pr=await darkslayersSupabase.from("profiles").select("id,display_name,role").in("id",ids);
-        ps=pr.data||[];
-    }
-    const pm=new Map(ps.map(p=>[p.id,p]));
+    const pm = await loadForumPublicProfiles(ids);
 
     const isStaff = user && ["admin","officer"].includes(profile?.role);
     const canDelete=x=>user&&(x===user.id||isStaff);
@@ -1215,7 +1690,7 @@ async function openForumTopic(id){
     const repliesHtml=replies.length
         ? replies.map(r=>{
             const p=pm.get(r.author_id)||{};
-            return `<div class="forum-reply"><div class="forum-post-meta"><strong>${escapeHtml(p.display_name||"Membru")}</strong><span>${(p.role||"member").toUpperCase()} • ${forumDate(r.created_at)}</span></div><p>${escapeHtml(r.content).replace(/\n/g,"<br>")}</p>${canDelete(r.author_id)?`<button class="forum-delete" onclick="deleteForumReply(${Number(r.id)},${Number(id)})">STERGE</button>`:""}</div>`;
+            return `<div class="forum-reply"><div class="forum-post-meta">${forumAuthorHtml(p)}<span>${forumDate(r.created_at)}</span></div><p>${escapeHtml(r.content).replace(/\n/g,"<br>")}</p>${canDelete(r.author_id)?`<button class="forum-delete" onclick="deleteForumReply(${Number(r.id)},${Number(id)})">STERGE</button>`:""}</div>`;
         }).join("")
         : '<div class="forum-empty">Niciun raspuns inca.</div>';
 
@@ -1231,7 +1706,7 @@ async function openForumTopic(id){
         icon:"💬",
         label:escapeHtml(t.category),
         title:(t.pinned ? "📌 " : "") + escapeHtml(t.title),
-        content:`<div class="forum-original"><div class="forum-post-meta"><strong>${escapeHtml(tp.display_name||"Membru")}</strong><span>${(tp.role||"member").toUpperCase()} • ${forumDate(t.created_at)}</span></div><p>${escapeHtml(t.content).replace(/\n/g,"<br>")}</p>${staffPinButton}${canDelete(t.author_id)?`<button class="forum-delete" onclick="deleteForumTopic(${Number(id)})">STERGE SUBIECTUL</button>`:""}</div><h3 class="forum-replies-title">RASPUNSURI</h3><div class="forum-replies">${repliesHtml}</div>${replyForm}`
+        content:`<div class="forum-original"><div class="forum-post-meta">${forumAuthorHtml(tp)}<span>${forumDate(t.created_at)}</span></div><p>${escapeHtml(t.content).replace(/\n/g,"<br>")}</p>${staffPinButton}${canDelete(t.author_id)?`<button class="forum-delete" onclick="deleteForumTopic(${Number(id)})">STERGE SUBIECTUL</button>`:""}</div><h3 class="forum-replies-title">RASPUNSURI</h3><div class="forum-replies">${repliesHtml}</div>${replyForm}`
     });
 }
 
