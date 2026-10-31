@@ -37,7 +37,7 @@ async function loadDarkSlayersMembers() {
     return window.DARKSLAYERS_MEMBERS;
 }
 
-document.addEventListener("DOMContentLoaded", loadDarkSlayersMembers);
+document.addEventListener("DOMContentLoaded", function () { refreshDarkSlayersRoster(); });
 
 /* =========================================
    DARKSLAYERS - COMPLETE SCRIPT
@@ -1068,14 +1068,68 @@ async function adminAddMember(event) {
     const row={name:document.getElementById("adminMemberName").value.trim(),game:document.getElementById("adminMemberGame").value.trim() || null,class:document.getElementById("adminMemberClass").value.trim() || null,role:"member",rank:document.getElementById("adminMemberRank").value,level:Number(document.getElementById("adminMemberLevel").value) || null};
     const {error}=await darkslayersSupabase.from("members").insert(row);
     if (error) { msg.textContent="Eroare: "+error.message; msg.className="auth-message error"; return; }
-    msg.textContent="Membru adaugat."; msg.className="auth-message success"; event.target.reset(); await adminLoadMembers();
+    msg.textContent="Membru adaugat."; msg.className="auth-message success"; event.target.reset(); await adminLoadMembers(); await refreshDarkSlayersRoster();
 }
 
 async function adminDeleteMember(id) {
     if (!confirm("Stergi acest membru din roster?")) return;
     const {error}=await darkslayersSupabase.from("members").delete().eq("id",id);
-    if (error) return alert("Nu s-a putut sterge membrul."); await adminLoadMembers();
+    if (error) return alert("Nu s-a putut sterge membrul."); await adminLoadMembers(); await refreshDarkSlayersRoster();
 }
+
+
+
+/* =========================================
+   LIVE ROSTER - SUPABASE
+========================================= */
+function rosterRankInfo(rank) {
+    const key = String(rank || "member").toLowerCase();
+    const map = {
+        gm: { label: "GUILD MASTER", icon: "⚔" },
+        officer: { label: "OFFICER", icon: "🛡" },
+        veteran: { label: "VETERAN", icon: "★" },
+        core: { label: "CORE RAIDER", icon: "⚔" },
+        member: { label: "MEMBER", icon: "◆" }
+    };
+    return { key: map[key] ? key : "member", ...(map[key] || map.member) };
+}
+
+function renderDarkSlayersRoster(members) {
+    const list = document.querySelector(".roster-list");
+    if (!list) return;
+
+    const rows = Array.isArray(members) ? members : [];
+    if (!rows.length) {
+        list.innerHTML = '<div class="roster-empty">Rosterul este gol momentan.</div>';
+        return;
+    }
+
+    list.innerHTML = rows.map(function (m) {
+        const rank = rosterRankInfo(m.rank);
+        const details = [m.class || "Clasa", m.game || ""].filter(Boolean).join(" • ");
+        const level = m.level ? " • Lv. " + Number(m.level) : "";
+        return `
+            <div class="roster-member" data-rank="${rank.key}" data-member-id="${Number(m.id)}">
+                <div class="roster-avatar">${rank.icon}</div>
+                <div class="roster-player">
+                    <h3>${escapeHtml(m.name || "Member")}</h3>
+                    <span>${escapeHtml(details)}${level}</span>
+                </div>
+                <div class="roster-rank rank-${rank.key}">${rank.label}</div>
+                <div class="roster-status online">● ACTIVE</div>
+            </div>`;
+    }).join("");
+}
+
+async function refreshDarkSlayersRoster() {
+    const members = await loadDarkSlayersMembers();
+    renderDarkSlayersRoster(members);
+}
+
+document.addEventListener("darkslayers:members-loaded", function (event) {
+    renderDarkSlayersRoster(event.detail || []);
+});
+
 
 document.addEventListener("DOMContentLoaded", function () {
     updateAccountButton();
