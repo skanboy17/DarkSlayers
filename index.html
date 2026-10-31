@@ -7,7 +7,7 @@
 
     <title>DARKSLAYERS | Gaming Community</title>
 
-    <link rel="stylesheet" href="style.css?v=20261031-officer1">
+    <link rel="stylesheet" href="style.css?v=20261031-forum1">
 </head>
 
 <body>
@@ -46,6 +46,10 @@
 
             <a href="#hub">
                 GUILD HUB
+            </a>
+
+            <a href="#forum">
+                FORUM
             </a>
 
         </div>
@@ -1226,6 +1230,32 @@
     </section>
 
 
+
+
+    <!-- DARKSLAYERS FORUM -->
+    <section id="forum" class="content-section forum-section">
+        <div class="section-header">
+            <small>DARKSLAYERS COMMUNITY</small>
+            <h2>FORUM</h2>
+            <p>Discutii, raiduri, ghiduri si idei pentru guilda.</p>
+        </div>
+        <div class="forum-shell">
+            <div class="forum-toolbar">
+                <select id="forumCategoryFilter" onchange="loadForumTopics()">
+                    <option value="all">TOATE CATEGORIILE</option>
+                    <option value="General">Discutii generale</option>
+                    <option value="Raiduri & Dungeon-uri">Raiduri & Dungeon-uri</option>
+                    <option value="WoW Forever">WoW Forever</option>
+                    <option value="WotLK">WotLK</option>
+                    <option value="Ghiduri & Build-uri">Ghiduri & Build-uri</option>
+                    <option value="Sugestii">Sugestii pentru guilda</option>
+                </select>
+                <button class="forum-new-button" onclick="openNewForumTopic()">+ SUBIECT NOU</button>
+            </div>
+            <div id="forumTopics" class="forum-topics"><div class="forum-empty">Se incarca forumul...</div></div>
+        </div>
+    </section>
+
     <!-- =========================================
          FEREASTRA GUILD HUB / GALERIE
     ========================================== -->
@@ -1304,7 +1334,7 @@
     <!-- JAVASCRIPT -->
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js?v=20261031-officer1"></script>
+    <script src="script.js?v=20261031-forum1"></script>
 
 </body>
 
