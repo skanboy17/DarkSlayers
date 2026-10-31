@@ -1518,27 +1518,29 @@ async function saveMyCharacter(event, characterId){
 
     if(!row.character_name) return;
 
-    if(row.is_main){
-        const reset = await darkslayersSupabase
-            .from("characters")
-            .update({is_main:false})
-            .eq("user_id", user.id);
-        if(reset.error){
-            console.error(reset.error);
-            alert("Nu am putut seta caracterul MAIN.");
-            return;
-        }
-    }
+    const wantsMain = row.is_main;
+    row.is_main = characterId ? undefined : false;
+    if(characterId) delete row.is_main;
 
     let result;
+    let savedCharacterId = characterId ? Number(characterId) : null;
+
     if(characterId){
         result = await darkslayersSupabase
             .from("characters")
             .update(row)
             .eq("id", Number(characterId))
-            .eq("user_id", user.id);
+            .eq("user_id", user.id)
+            .select("id")
+            .maybeSingle();
+        savedCharacterId = Number(characterId);
     } else {
-        result = await darkslayersSupabase.from("characters").insert(row);
+        result = await darkslayersSupabase
+            .from("characters")
+            .insert(row)
+            .select("id")
+            .single();
+        savedCharacterId = Number(result.data?.id);
     }
 
     if(result.error){
@@ -1547,7 +1549,19 @@ async function saveMyCharacter(event, characterId){
         return;
     }
 
-    await syncMyMainCharacterToRoster();
+    if(wantsMain && savedCharacterId){
+        const { error: mainError } = await darkslayersSupabase.rpc("set_my_main_character", {
+            target_character_id: savedCharacterId
+        });
+        if(mainError){
+            console.error("DARKSLAYERS MAIN character:", mainError);
+            alert("Caracterul a fost salvat, dar nu am putut seta MAIN: " + mainError.message);
+            return;
+        }
+    } else {
+        await syncMyMainCharacterToRoster();
+    }
+
     await openMyProfile();
 }
 
@@ -1555,28 +1569,17 @@ async function setMainCharacter(id){
     const user = await getDarkSlayersUser();
     if(!user) return;
 
-    const reset = await darkslayersSupabase
-        .from("characters")
-        .update({is_main:false})
-        .eq("user_id", user.id);
+    const { error } = await darkslayersSupabase.rpc("set_my_main_character", {
+        target_character_id: Number(id)
+    });
 
-    if(reset.error){
-        console.error(reset.error);
-        return alert("Nu am putut schimba MAIN-ul.");
+    if(error){
+        console.error("DARKSLAYERS MAIN character:", error);
+        alert("Nu am putut schimba MAIN-ul: " + error.message);
+        return;
     }
 
-    const result = await darkslayersSupabase
-        .from("characters")
-        .update({is_main:true})
-        .eq("id", Number(id))
-        .eq("user_id", user.id);
-
-    if(result.error){
-        console.error(result.error);
-        return alert("Nu am putut schimba MAIN-ul.");
-    }
-
-    await syncMyMainCharacterToRoster();
+    await refreshDarkSlayersRoster();
     await openMyProfile();
 }
 
