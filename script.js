@@ -1039,14 +1039,18 @@ async function openAdminPanel() {
     if (!user || profile?.role !== "admin") return;
     openSiteModal({icon:"♛",label:"DARKSLAYERS",title:"ADMIN PANEL",content:`
         <div class="modal-highlight">Conectat ca <strong>${escapeHtml(profile.display_name || "Admin")}</strong> • ADMIN</div>
-        <h3>MEMBRI GUILDA</h3>
-        <form class="admin-member-form" onsubmit="adminAddMember(event)">
+        <h3 id="adminFormTitle">ADAUGA MEMBRU</h3>
+        <form class="admin-member-form" onsubmit="adminSaveMember(event)">
+            <input id="adminMemberId" type="hidden">
             <input id="adminMemberName" required maxlength="30" placeholder="Nume">
             <input id="adminMemberGame" maxlength="30" placeholder="Joc (Forever / WotLK)">
             <input id="adminMemberClass" maxlength="30" placeholder="Clasa">
             <select id="adminMemberRank"><option value="member">Member</option><option value="core">Core Raider</option><option value="veteran">Veteran</option><option value="officer">Officer</option><option value="gm">Guild Master</option></select>
             <input id="adminMemberLevel" type="number" min="1" max="100" placeholder="Level">
-            <button class="auth-submit" type="submit">+ ADAUGA MEMBRU</button>
+            <div class="admin-form-actions">
+                <button id="adminSaveButton" class="auth-submit" type="submit">+ ADAUGA MEMBRU</button>
+                <button id="adminCancelEdit" class="auth-submit admin-cancel-edit" type="button" style="display:none" onclick="adminCancelEdit()">ANULEAZA</button>
+            </div>
         </form>
         <div id="adminMemberMessage" class="auth-message"></div>
         <div id="adminMembersList" class="admin-members-list">Se incarca...</div>`});
@@ -1060,15 +1064,48 @@ async function adminLoadMembers() {
     const {data,error}=await darkslayersSupabase.from("members").select("id,name,game,class,role,rank,level").order("name");
     if (error) { box.textContent="Nu am putut incarca rosterul."; return; }
     if (!data?.length) { box.innerHTML='<div class="admin-empty">Rosterul este gol.</div>'; return; }
-    box.innerHTML=data.map(m=>`<div class="admin-member-row"><div><strong>${escapeHtml(m.name)}</strong><span>${escapeHtml(m.class || "Clasa")} • ${escapeHtml(m.rank || "member")} ${m.level ? "• Lv. "+m.level : ""}</span></div><button onclick="adminDeleteMember(${Number(m.id)})">STERGE</button></div>`).join("");
+    window.DARKSLAYERS_ADMIN_MEMBERS = data;
+    box.innerHTML=data.map(m=>`<div class="admin-member-row"><div><strong>${escapeHtml(m.name)}</strong><span>${escapeHtml(m.game || "WoW")} • ${escapeHtml(m.class || "Clasa")} • ${escapeHtml(m.rank || "member")} ${m.level ? "• Lv. "+m.level : ""}</span></div><div class="admin-row-actions"><button class="admin-edit-button" onclick="adminEditMember(${Number(m.id)})">EDITEAZA</button><button class="admin-delete-button" onclick="adminDeleteMember(${Number(m.id)})">STERGE</button></div></div>`).join("");
 }
 
-async function adminAddMember(event) {
-    event.preventDefault(); const msg=document.getElementById("adminMemberMessage");
+async function adminSaveMember(event) {
+    event.preventDefault();
+    const msg=document.getElementById("adminMemberMessage");
+    const id=document.getElementById("adminMemberId").value;
     const row={name:document.getElementById("adminMemberName").value.trim(),game:document.getElementById("adminMemberGame").value.trim() || null,class:document.getElementById("adminMemberClass").value.trim() || null,role:"member",rank:document.getElementById("adminMemberRank").value,level:Number(document.getElementById("adminMemberLevel").value) || null};
-    const {error}=await darkslayersSupabase.from("members").insert(row);
-    if (error) { msg.textContent="Eroare: "+error.message; msg.className="auth-message error"; return; }
-    msg.textContent="Membru adaugat."; msg.className="auth-message success"; event.target.reset(); await adminLoadMembers(); await refreshDarkSlayersRoster();
+    let result;
+    if (id) result=await darkslayersSupabase.from("members").update(row).eq("id",Number(id));
+    else result=await darkslayersSupabase.from("members").insert(row);
+    if (result.error) { msg.textContent="Eroare: "+result.error.message; msg.className="auth-message error"; return; }
+    msg.textContent=id ? "Membru modificat." : "Membru adaugat.";
+    msg.className="auth-message success";
+    adminCancelEdit();
+    await adminLoadMembers();
+    await refreshDarkSlayersRoster();
+}
+
+function adminEditMember(id) {
+    const m=(window.DARKSLAYERS_ADMIN_MEMBERS || []).find(x=>Number(x.id)===Number(id));
+    if (!m) return;
+    document.getElementById("adminMemberId").value=m.id;
+    document.getElementById("adminMemberName").value=m.name || "";
+    document.getElementById("adminMemberGame").value=m.game || "";
+    document.getElementById("adminMemberClass").value=m.class || "";
+    document.getElementById("adminMemberRank").value=m.rank || "member";
+    document.getElementById("adminMemberLevel").value=m.level || "";
+    document.getElementById("adminFormTitle").textContent="EDITEAZA MEMBRU";
+    document.getElementById("adminSaveButton").textContent="SALVEAZA MODIFICARILE";
+    document.getElementById("adminCancelEdit").style.display="block";
+    document.getElementById("adminMemberName").focus();
+}
+
+function adminCancelEdit() {
+    const form=document.querySelector(".admin-member-form");
+    if (form) form.reset();
+    const id=document.getElementById("adminMemberId"); if (id) id.value="";
+    const title=document.getElementById("adminFormTitle"); if (title) title.textContent="ADAUGA MEMBRU";
+    const save=document.getElementById("adminSaveButton"); if (save) save.textContent="+ ADAUGA MEMBRU";
+    const cancel=document.getElementById("adminCancelEdit"); if (cancel) cancel.style.display="none";
 }
 
 async function adminDeleteMember(id) {

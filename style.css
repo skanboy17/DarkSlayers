@@ -2008,3 +2008,14 @@ body.modal-open {
 .admin-member-row button { padding:8px 10px; color:#ff7777; background:#160707; border:1px solid #6b2020; cursor:pointer; }
 .admin-empty { padding:14px; color:#999; border:1px dashed #3b2525; text-align:center; }
 @media(max-width:650px){ .admin-member-form{grid-template-columns:1fr;} }
+
+
+/* DARKSLAYERS ADMIN - EDIT MEMBER */
+.admin-form-actions { grid-column:1/-1; display:grid; grid-template-columns:1fr auto; gap:10px; }
+.admin-form-actions .auth-submit { grid-column:auto; margin-top:0; }
+.admin-cancel-edit { background:linear-gradient(180deg,#3b3b3b,#1c1c1c); border-color:#666; }
+.admin-row-actions { display:flex !important; grid-auto-flow:column; gap:8px !important; }
+.admin-member-row .admin-edit-button { color:#ffe39a; background:#1c1507; border:1px solid #8b6722; }
+.admin-member-row .admin-delete-button { color:#ff7777; background:#160707; border:1px solid #6b2020; }
+.admin-member-row button:hover { filter:brightness(1.2); }
+@media(max-width:650px){ .admin-form-actions{grid-template-columns:1fr;} .admin-row-actions{display:grid !important;} }
