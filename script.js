@@ -1075,18 +1075,118 @@ async function forumContext(){
     const profile=user ? await getDarkSlayersProfile(user) : null;
     return {user,profile};
 }
-async function loadForumTopics(){
-    const box=document.getElementById("forumTopics"); if(!box||!darkslayersSupabase)return;
-    box.innerHTML='<div class="forum-empty">Se incarca forumul...</div>';
-    let q=darkslayersSupabase.from("forum_topics").select("id,created_at,author_id,category,title,content").order("created_at",{ascending:false});
-    const filter=document.getElementById("forumCategoryFilter")?.value; if(filter&&filter!=="all")q=q.eq("category",filter);
-    const {data,error}=await q; if(error){console.error(error);box.innerHTML='<div class="forum-empty">Nu am putut incarca forumul.</div>';return;}
-    const topics=data||[];
-    const ids=[...new Set(topics.map(x=>x.author_id))]; let profiles=[];
-    if(ids.length){ const r=await darkslayersSupabase.from("profiles").select("id,display_name,role").in("id",ids); profiles=r.data||[]; }
-    const pmap=new Map(profiles.map(p=>[p.id,p]));
-    if(!topics.length){box.innerHTML='<div class="forum-empty">Nu exista subiecte inca. Fii primul care scrie!</div>';return;}
-    box.innerHTML=topics.map(t=>{const p=pmap.get(t.author_id)||{};return `<button class="forum-topic" onclick="openForumTopic(${Number(t.id)})"><span class="forum-topic-category">${escapeHtml(t.category)}</span><span class="forum-topic-main"><strong>${escapeHtml(t.title)}</strong><small>de ${escapeHtml(p.display_name||"Membru")} • ${(p.role||"member").toUpperCase()} • ${forumDate(t.created_at)}</small></span><span class="forum-topic-arrow">→</span></button>`}).join("");
+const DARKSLAYERS_FORUM_PAGE_SIZE = 10;
+let DARKSLAYERS_FORUM_PAGE = 1;
+
+async function loadForumTopics(page = DARKSLAYERS_FORUM_PAGE){
+    const box = document.getElementById("forumTopics");
+    if(!box || !darkslayersSupabase) return;
+
+    DARKSLAYERS_FORUM_PAGE = Math.max(1, Number(page) || 1);
+
+    box.innerHTML = '<div class="forum-empty">Se incarca forumul...</div>';
+
+    const filter = document.getElementById("forumCategoryFilter")?.value || "all";
+
+    const from = (DARKSLAYERS_FORUM_PAGE - 1) * DARKSLAYERS_FORUM_PAGE_SIZE;
+    const to = from + DARKSLAYERS_FORUM_PAGE_SIZE - 1;
+
+    let q = darkslayersSupabase
+        .from("forum_topics")
+        .select("id,created_at,author_id,category,title,content", {count:"exact"})
+        .order("created_at",{ascending:false})
+        .range(from,to);
+
+    if(filter !== "all"){
+        q = q.eq("category",filter);
+    }
+
+    const {data,error,count} = await q;
+
+    if(error){
+        console.error(error);
+        box.innerHTML = '<div class="forum-empty">Nu am putut incarca forumul.</div>';
+        return;
+    }
+
+    const topics = data || [];
+    const totalPages = Math.max(1, Math.ceil((count || 0) / DARKSLAYERS_FORUM_PAGE_SIZE));
+
+    const ids = [...new Set(topics.map(x => x.author_id))];
+    let profiles = [];
+
+    if(ids.length){
+        const r = await darkslayersSupabase
+            .from("profiles")
+            .select("id,display_name,role")
+            .in("id",ids);
+
+        profiles = r.data || [];
+    }
+
+    const pmap = new Map(profiles.map(p => [p.id,p]));
+
+    if(!topics.length){
+        box.innerHTML = '<div class="forum-empty">Nu exista subiecte inca. Fii primul care scrie!</div>';
+        return;
+    }
+
+    let html = topics.map(t => {
+        const p = pmap.get(t.author_id) || {};
+
+        return `
+        <button class="forum-topic" onclick="openForumTopic(${Number(t.id)})">
+            <span class="forum-topic-category">${escapeHtml(t.category)}</span>
+
+            <span class="forum-topic-main">
+                <strong>${escapeHtml(t.title)}</strong>
+                <small>
+                    de ${escapeHtml(p.display_name || "Membru")} •
+                    ${(p.role || "member").toUpperCase()} •
+                    ${forumDate(t.created_at)}
+                </small>
+            </span>
+
+            <span class="forum-topic-arrow">→</span>
+        </button>`;
+    }).join("");
+
+    if(totalPages > 1){
+
+        let pages = "";
+
+        for(let i = 1; i <= totalPages; i++){
+            pages += `
+                <button onclick="changeForumPage(${i})"
+                    ${i === DARKSLAYERS_FORUM_PAGE ? "disabled" : ""}>
+                    ${i}
+                </button>`;
+        }
+
+        html += `
+        <div class="forum-pagination">
+
+            <button onclick="changeForumPage(${DARKSLAYERS_FORUM_PAGE - 1})"
+                ${DARKSLAYERS_FORUM_PAGE <= 1 ? "disabled" : ""}>
+                ← INAPOI
+            </button>
+
+            ${pages}
+
+            <button onclick="changeForumPage(${DARKSLAYERS_FORUM_PAGE + 1})"
+                ${DARKSLAYERS_FORUM_PAGE >= totalPages ? "disabled" : ""}>
+                URMATOAREA →
+            </button>
+
+        </div>`;
+    }
+
+    box.innerHTML = html;
+}
+
+function changeForumPage(page){
+    DARKSLAYERS_FORUM_PAGE = page;
+    loadForumTopics(page);
 }
 async function openNewForumTopic(){
     const {user}=await forumContext(); if(!user){alert("Trebuie sa fii conectat pentru a crea un subiect.");openAccountModal("login");return;}
