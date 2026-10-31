@@ -31,18 +31,7 @@ document.write('<script src="script-base.js?v=20261101-roleicons1"><\/script>');
         return type === 'TANK' ? '🛡' : type === 'HEALER' ? '✚' : type === 'RANGED' ? '🏹' : '🗡';
     };
 
-    function removeSkybornFromGameSelector() {
-        const gameSelect = document.getElementById('characterGame');
-        if (!gameSelect) return;
-        Array.from(gameSelect.options).forEach(function (option) {
-            if (String(option.value || option.textContent).trim().toLowerCase() === 'skyborn') {
-                option.remove();
-            }
-        });
-    }
-
     function renderRoleCard() {
-        removeSkybornFromGameSelector();
         const input = document.getElementById('characterCombatRole');
         if (!input) return;
         const className = document.getElementById('characterClass')?.value || '';
