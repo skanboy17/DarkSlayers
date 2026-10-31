@@ -175,13 +175,13 @@ async function getDarkSlayersRaidAdminStatus() {
         console.error("DARKSLAYERS raid admin check:", error);
         return false;
     }
-    return profile?.role === "admin";
+    return ["admin", "officer"].includes(profile?.role);
 }
 
 async function loadDarkSlayersRaidProgress() {
     if (!darkslayersSupabase) return;
 
-    const [{ data: rows, error }, isAdmin] = await Promise.all([
+    const [{ data: rows, error }, canManageRaids] = await Promise.all([
         darkslayersSupabase
             .from("raid_progress")
             .select("raid_key, current_bosses, total_bosses"),
@@ -225,7 +225,7 @@ async function loadDarkSlayersRaidProgress() {
         let minusButton = null;
         let plusButton = null;
 
-        if (isAdmin) {
+        if (canManageRaids) {
             minusButton = document.createElement("button");
             minusButton.className = "progress-button minus";
             minusButton.textContent = "−";
@@ -253,7 +253,7 @@ async function loadDarkSlayersRaidProgress() {
         }
 
         async function saveProgress(nextValue) {
-            if (!isAdmin) return;
+            if (!canManageRaids) return;
             const previousValue = currentBosses;
             currentBosses = Math.max(0, Math.min(maxBosses, nextValue));
             renderProgress();
@@ -804,6 +804,7 @@ function openAccountModal(mode = "login") {
                     <small id="loggedInEmail"></small>
                 </div>
                 <button id="adminPanelButton" class="auth-submit admin-panel-button" style="display:none" onclick="openAdminPanel()">♛ ADMIN PANEL</button>
+                <button id="officerPanelButton" class="auth-submit admin-panel-button" style="display:none" onclick="openOfficerPanel()">⚔ OFFICER PANEL</button>
                 <button class="auth-submit auth-logout" onclick="logoutDarkSlayers()">LOGOUT</button>
             </div>`
     });
@@ -860,7 +861,7 @@ async function updateAccountButton() {
     if (!user) { DARKSLAYERS_CURRENT_PROFILE=null; button.textContent="CONT"; button.classList.remove("logged-in","admin-account"); return; }
     const profile=await getDarkSlayersProfile(user); DARKSLAYERS_CURRENT_PROFILE=profile;
     const displayName=profile?.display_name || user.user_metadata?.display_name || "CONTUL MEU";
-    button.textContent=(profile?.role === "admin" ? "♛ " : "") + displayName.toUpperCase();
+    button.textContent=(profile?.role === "admin" ? "♛ " : profile?.role === "officer" ? "⚔ " : "") + displayName.toUpperCase();
     button.classList.add("logged-in"); button.classList.toggle("admin-account", profile?.role === "admin");
 }
 
@@ -876,6 +877,8 @@ async function refreshAuthModal() {
     const role=(profile?.role || "member").toUpperCase(); document.getElementById("loggedInRole").textContent=role;
     document.getElementById("loggedInRole").className="role-badge role-" + role.toLowerCase();
     document.getElementById("adminPanelButton").style.display=role === "ADMIN" ? "block" : "none";
+    const officerButton=document.getElementById("officerPanelButton");
+    if (officerButton) officerButton.style.display=role === "OFFICER" ? "block" : "none";
 }
 
 async function openAdminPanel() {
@@ -901,6 +904,37 @@ async function openAdminPanel() {
     await adminLoadMembers();
 }
 
+
+async function openOfficerPanel() {
+    const user=await getDarkSlayersUser(), profile=await getDarkSlayersProfile(user);
+    if (!user || profile?.role !== "officer") return;
+
+    openSiteModal({icon:"⚔",label:"DARKSLAYERS",title:"OFFICER PANEL",content:`
+        <div class="modal-highlight">Conectat ca <strong>${escapeHtml(profile.display_name || "Officer")}</strong> • OFFICER</div>
+        <div class="modal-highlight">Poti adauga si edita membri. Stergerea membrilor ramane disponibila doar pentru Admin.</div>
+        <h3 id="adminFormTitle">ADAUGA MEMBRU</h3>
+        <form class="admin-member-form" onsubmit="adminSaveMember(event)">
+            <input id="adminMemberId" type="hidden">
+            <input id="adminMemberName" required maxlength="30" placeholder="Nume">
+            <input id="adminMemberGame" maxlength="30" placeholder="Joc (Forever / WotLK)">
+            <input id="adminMemberClass" maxlength="30" placeholder="Clasa">
+            <select id="adminMemberRank">
+                <option value="member">Member</option>
+                <option value="core">Core Raider</option>
+                <option value="veteran">Veteran</option>
+                <option value="officer">Officer</option>
+            </select>
+            <input id="adminMemberLevel" type="number" min="1" max="100" placeholder="Level">
+            <div class="admin-form-actions">
+                <button id="adminSaveButton" class="auth-submit" type="submit">+ ADAUGA MEMBRU</button>
+                <button id="adminCancelEdit" class="auth-submit admin-cancel-edit" type="button" style="display:none" onclick="adminCancelEdit()">ANULEAZA</button>
+            </div>
+        </form>
+        <div id="adminMemberMessage" class="auth-message"></div>
+        <div id="adminMembersList" class="admin-members-list">Se incarca...</div>`});
+    await adminLoadMembers();
+}
+
 function escapeHtml(value) { const d=document.createElement("div"); d.textContent=value ?? ""; return d.innerHTML; }
 
 async function adminLoadMembers() {
@@ -909,7 +943,8 @@ async function adminLoadMembers() {
     if (error) { box.textContent="Nu am putut incarca rosterul."; return; }
     if (!data?.length) { box.innerHTML='<div class="admin-empty">Rosterul este gol.</div>'; return; }
     window.DARKSLAYERS_ADMIN_MEMBERS = data;
-    box.innerHTML=data.map(m=>`<div class="admin-member-row"><div><strong>${escapeHtml(m.name)}</strong><span>${escapeHtml(m.game || "WoW")} • ${escapeHtml(m.class || "Clasa")} • ${escapeHtml(m.rank || "member")} ${m.level ? "• Lv. "+m.level : ""}</span></div><div class="admin-row-actions"><button class="admin-edit-button" onclick="adminEditMember(${Number(m.id)})">EDITEAZA</button><button class="admin-delete-button" onclick="adminDeleteMember(${Number(m.id)})">STERGE</button></div></div>`).join("");
+    const isAdmin = DARKSLAYERS_CURRENT_PROFILE?.role === "admin";
+    box.innerHTML=data.map(m=>`<div class="admin-member-row"><div><strong>${escapeHtml(m.name)}</strong><span>${escapeHtml(m.game || "WoW")} • ${escapeHtml(m.class || "Clasa")} • ${escapeHtml(m.rank || "member")} ${m.level ? "• Lv. "+m.level : ""}</span></div><div class="admin-row-actions"><button class="admin-edit-button" onclick="adminEditMember(${Number(m.id)})">EDITEAZA</button>${isAdmin ? `<button class="admin-delete-button" onclick="adminDeleteMember(${Number(m.id)})">STERGE</button>` : ""}</div></div>`).join("");
 }
 
 async function adminSaveMember(event) {
