@@ -1068,42 +1068,49 @@ const DARKSLAYERS_FORUM_CATEGORIES = [
     "Ghiduri & Build-uri",
     "Sugestii"
 ];
-const DARKSLAYERS_FORUM_CATEGORIES = ["General","Raiduri & Dungeon-uri","WoW Forever","WotLK","Ghiduri & Build-uri","Sugestii"];
-function forumDate(value){ try{return new Date(value).toLocaleString("ro-RO",{dateStyle:"medium",timeStyle:"short"});}catch{return "";} }
-async function forumContext(){
-    const user=await getDarkSlayersUser();
-    const profile=user ? await getDarkSlayersProfile(user) : null;
-    return {user,profile};
-}
+
 const DARKSLAYERS_FORUM_PAGE_SIZE = 10;
 let DARKSLAYERS_FORUM_PAGE = 1;
 
+function forumDate(value){
+    try {
+        return new Date(value).toLocaleString("ro-RO", {
+            dateStyle: "medium",
+            timeStyle: "short"
+        });
+    } catch {
+        return "";
+    }
+}
+
+async function forumContext(){
+    const user = await getDarkSlayersUser();
+    const profile = user ? await getDarkSlayersProfile(user) : null;
+    return { user, profile };
+}
+
 async function loadForumTopics(page = DARKSLAYERS_FORUM_PAGE){
     const box = document.getElementById("forumTopics");
-    if(!box || !darkslayersSupabase) return;
+    if (!box || !darkslayersSupabase) return;
 
     DARKSLAYERS_FORUM_PAGE = Math.max(1, Number(page) || 1);
-
     box.innerHTML = '<div class="forum-empty">Se incarca forumul...</div>';
 
     const filter = document.getElementById("forumCategoryFilter")?.value || "all";
-
     const from = (DARKSLAYERS_FORUM_PAGE - 1) * DARKSLAYERS_FORUM_PAGE_SIZE;
     const to = from + DARKSLAYERS_FORUM_PAGE_SIZE - 1;
 
     let q = darkslayersSupabase
         .from("forum_topics")
-        .select("id,created_at,author_id,category,title,content", {count:"exact"})
-        .order("created_at",{ascending:false})
-        .range(from,to);
+        .select("id,created_at,author_id,category,title,content", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(from, to);
 
-    if(filter !== "all"){
-        q = q.eq("category",filter);
-    }
+    if (filter !== "all") q = q.eq("category", filter);
 
-    const {data,error,count} = await q;
+    const { data, error, count } = await q;
 
-    if(error){
+    if (error) {
         console.error(error);
         box.innerHTML = '<div class="forum-empty">Nu am putut incarca forumul.</div>';
         return;
@@ -1112,72 +1119,51 @@ async function loadForumTopics(page = DARKSLAYERS_FORUM_PAGE){
     const topics = data || [];
     const totalPages = Math.max(1, Math.ceil((count || 0) / DARKSLAYERS_FORUM_PAGE_SIZE));
 
+    if (DARKSLAYERS_FORUM_PAGE > totalPages) {
+        DARKSLAYERS_FORUM_PAGE = totalPages;
+        return loadForumTopics(totalPages);
+    }
+
     const ids = [...new Set(topics.map(x => x.author_id))];
     let profiles = [];
 
-    if(ids.length){
+    if (ids.length) {
         const r = await darkslayersSupabase
             .from("profiles")
             .select("id,display_name,role")
-            .in("id",ids);
-
+            .in("id", ids);
         profiles = r.data || [];
     }
 
-    const pmap = new Map(profiles.map(p => [p.id,p]));
+    const pmap = new Map(profiles.map(p => [p.id, p]));
 
-    if(!topics.length){
-        box.innerHTML = '<div class="forum-empty">Nu exista subiecte inca. Fii primul care scrie!</div>';
-        return;
+    let html = "";
+
+    if (!topics.length) {
+        html = '<div class="forum-empty">Nu exista subiecte inca. Fii primul care scrie!</div>';
+    } else {
+        html = topics.map(t => {
+            const p = pmap.get(t.author_id) || {};
+            return `<button class="forum-topic" onclick="openForumTopic(${Number(t.id)})">
+                <span class="forum-topic-category">${escapeHtml(t.category)}</span>
+                <span class="forum-topic-main">
+                    <strong>${escapeHtml(t.title)}</strong>
+                    <small>de ${escapeHtml(p.display_name || "Membru")} • ${(p.role || "member").toUpperCase()} • ${forumDate(t.created_at)}</small>
+                </span>
+                <span class="forum-topic-arrow">→</span>
+            </button>`;
+        }).join("");
     }
 
-    let html = topics.map(t => {
-        const p = pmap.get(t.author_id) || {};
+    if (totalPages > 1) {
+        const pageButtons = Array.from({ length: totalPages }, (_, i) => i + 1)
+            .map(n => `<button type="button" onclick="changeForumPage(${n})" ${n === DARKSLAYERS_FORUM_PAGE ? 'disabled' : ''}>${n}</button>`)
+            .join("");
 
-        return `
-        <button class="forum-topic" onclick="openForumTopic(${Number(t.id)})">
-            <span class="forum-topic-category">${escapeHtml(t.category)}</span>
-
-            <span class="forum-topic-main">
-                <strong>${escapeHtml(t.title)}</strong>
-                <small>
-                    de ${escapeHtml(p.display_name || "Membru")} •
-                    ${(p.role || "member").toUpperCase()} •
-                    ${forumDate(t.created_at)}
-                </small>
-            </span>
-
-            <span class="forum-topic-arrow">→</span>
-        </button>`;
-    }).join("");
-
-    if(totalPages > 1){
-
-        let pages = "";
-
-        for(let i = 1; i <= totalPages; i++){
-            pages += `
-                <button onclick="changeForumPage(${i})"
-                    ${i === DARKSLAYERS_FORUM_PAGE ? "disabled" : ""}>
-                    ${i}
-                </button>`;
-        }
-
-        html += `
-        <div class="forum-pagination">
-
-            <button onclick="changeForumPage(${DARKSLAYERS_FORUM_PAGE - 1})"
-                ${DARKSLAYERS_FORUM_PAGE <= 1 ? "disabled" : ""}>
-                ← INAPOI
-            </button>
-
-            ${pages}
-
-            <button onclick="changeForumPage(${DARKSLAYERS_FORUM_PAGE + 1})"
-                ${DARKSLAYERS_FORUM_PAGE >= totalPages ? "disabled" : ""}>
-                URMATOAREA →
-            </button>
-
+        html += `<div class="forum-pagination" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin-top:18px;">
+            <button type="button" onclick="changeForumPage(${DARKSLAYERS_FORUM_PAGE - 1})" ${DARKSLAYERS_FORUM_PAGE <= 1 ? 'disabled' : ''}>← INAPOI</button>
+            ${pageButtons}
+            <button type="button" onclick="changeForumPage(${DARKSLAYERS_FORUM_PAGE + 1})" ${DARKSLAYERS_FORUM_PAGE >= totalPages ? 'disabled' : ''}>URMATOAREA →</button>
         </div>`;
     }
 
@@ -1185,9 +1171,15 @@ async function loadForumTopics(page = DARKSLAYERS_FORUM_PAGE){
 }
 
 function changeForumPage(page){
-    DARKSLAYERS_FORUM_PAGE = page;
-    loadForumTopics(page);
+    DARKSLAYERS_FORUM_PAGE = Math.max(1, Number(page) || 1);
+    loadForumTopics(DARKSLAYERS_FORUM_PAGE);
 }
+
+function resetForumPage(){
+    DARKSLAYERS_FORUM_PAGE = 1;
+    loadForumTopics(1);
+}
+
 async function openNewForumTopic(){
     const {user}=await forumContext(); if(!user){alert("Trebuie sa fii conectat pentru a crea un subiect.");openAccountModal("login");return;}
     openSiteModal({icon:"💬",label:"DARKSLAYERS FORUM",title:"SUBIECT NOU",content:`<form class="forum-form" onsubmit="createForumTopic(event)"><label>CATEGORIE</label><select id="newForumCategory" required>${DARKSLAYERS_FORUM_CATEGORIES.map(x=>`<option>${escapeHtml(x)}</option>`).join("")}</select><label>TITLU</label><input id="newForumTitle" maxlength="120" required placeholder="Titlul discutiei"><label>MESAJ</label><textarea id="newForumContent" maxlength="5000" required placeholder="Scrie mesajul tau..."></textarea><button class="auth-submit" type="submit">PUBLICA SUBIECTUL</button></form>`});
