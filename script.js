@@ -1,4 +1,45 @@
 /* =========================================
+   SUPABASE - DARKSLAYERS
+   Public browser connection only.
+   NEVER put the Supabase secret key in this file.
+========================================= */
+const DARKSLAYERS_SUPABASE_URL = "https://hivwzuduuvfvwdgrdcmw.supabase.co";
+const DARKSLAYERS_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_61ygsmlpCWR4X41ArKEOyQ_SPsNe19L";
+
+const darkslayersSupabase = window.supabase
+    ? window.supabase.createClient(
+        DARKSLAYERS_SUPABASE_URL,
+        DARKSLAYERS_SUPABASE_PUBLISHABLE_KEY
+      )
+    : null;
+
+async function loadDarkSlayersMembers() {
+    if (!darkslayersSupabase) {
+        console.error("Supabase client was not loaded.");
+        return [];
+    }
+
+    const { data, error } = await darkslayersSupabase
+        .from("members")
+        .select("id, created_at, name, game, class, role, rank, level")
+        .order("name", { ascending: true });
+
+    if (error) {
+        console.error("DARKSLAYERS members:", error);
+        return [];
+    }
+
+    window.DARKSLAYERS_MEMBERS = data || [];
+    document.dispatchEvent(new CustomEvent("darkslayers:members-loaded", {
+        detail: window.DARKSLAYERS_MEMBERS
+    }));
+
+    return window.DARKSLAYERS_MEMBERS;
+}
+
+document.addEventListener("DOMContentLoaded", loadDarkSlayersMembers);
+
+/* =========================================
    DARKSLAYERS - COMPLETE SCRIPT
 ========================================= */
 

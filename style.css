@@ -1913,7 +1913,7 @@ body.modal-open {
 
 
 /* =========================================
-   HEADER HORDE - FINAL POSITION
+   HEADER HORDE - FINAL TRANSPARENT STYLE
 ========================================= */
 
 .logo {
@@ -1924,19 +1924,16 @@ body.modal-open {
     align-items: center;
     justify-content: center;
     overflow: visible;
-    padding-left: 22px;
-    box-sizing: border-box;
     font-size: 0 !important;
     color: transparent !important;
 }
 
 .horde-header-banner {
     display: block;
-    width: 315px;
-    height: 118px;
+    width: 345px;
+    height: 135px;
     object-fit: contain;
-    object-position: center center;
-    transform: translateY(3px);
+    object-position: center;
     pointer-events: none;
 }
 
@@ -1954,13 +1951,12 @@ body.modal-open {
     .logo {
         width: 105px;
         min-width: 105px;
-        padding-left: 6px;
         overflow: hidden;
     }
 
     .horde-header-banner {
-        width: 94px;
-        height: 66px;
-        transform: none;
+        width: 100px;
+        height: 72px;
+        object-fit: contain;
     }
 }
