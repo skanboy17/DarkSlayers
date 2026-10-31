@@ -1,5 +1,5 @@
-/* DARKSLAYERS - stable base + character role UI */
-document.write('<script src="script-base.js?v=20261101-rolefix3"><\/script>');
+/* DARKSLAYERS - stable base + safe UI fixes */
+document.write('<script src="script-base.js?v=20261101-accountfix1"><\/script>');
 
 (function () {
     function removeSkybornFromGame() {
@@ -18,20 +18,18 @@ document.write('<script src="script-base.js?v=20261101-rolefix3"><\/script>');
             role.textContent = 'GUILD MASTER';
             role.classList.add('role-admin');
         }
-        document.querySelectorAll('.modal-highlight').forEach(function (el) {
-            if (el.textContent.includes('• ADMIN')) {
-                Array.from(el.childNodes).forEach(function(node) {
-                    if (node.nodeType === Node.TEXT_NODE) node.textContent = node.textContent.replace('• ADMIN', '• GUILD MASTER');
-                });
-            }
-        });
     }
 
     function roleKind(className, spec, role) {
-        role = String(role || '').toUpperCase(); className = String(className || ''); spec = String(spec || '');
+        role = String(role || '').toUpperCase();
+        className = String(className || '');
+        spec = String(spec || '');
         if (role === 'TANK') return 'tank';
         if (role === 'HEALER') return 'healer';
-        var ranged = ['Hunter','Mage','Warlock'].includes(className) || (className === 'Priest' && spec === 'Shadow') || (className === 'Druid' && spec === 'Balance') || (className === 'Shaman' && spec === 'Elemental');
+        var ranged = ['Hunter','Mage','Warlock'].includes(className) ||
+            (className === 'Priest' && spec === 'Shadow') ||
+            (className === 'Druid' && spec === 'Balance') ||
+            (className === 'Shaman' && spec === 'Elemental');
         return ranged ? 'ranged' : 'melee';
     }
 
@@ -44,36 +42,49 @@ document.write('<script src="script-base.js?v=20261101-rolefix3"><\/script>');
 
     function decorate() {
         removeSkybornFromGame();
-        var role = document.getElementById('characterCombatRole'), cls = document.getElementById('characterClass'), spec = document.getElementById('characterSpec');
+        var role = document.getElementById('characterCombatRole');
+        var cls = document.getElementById('characterClass');
+        var spec = document.getElementById('characterSpec');
         if (!role || !cls || !spec) return;
-        document.getElementById('dsCharacterRolePreview')?.remove();
-        var kind = roleKind(cls.value, spec.value, role.value), names = {tank:'TANK', healer:'HEALER', melee:'MELEE DPS', ranged:'RANGED DPS'};
-        var preview = document.createElement('div'); preview.id = 'dsCharacterRolePreview'; preview.className = 'ds-role-preview ds-' + kind;
-        preview.innerHTML = icon(kind) + '<strong>' + names[kind] + '</strong>'; role.insertAdjacentElement('afterend', preview);
+        var old = document.getElementById('dsCharacterRolePreview');
+        if (old) old.remove();
+        var kind = roleKind(cls.value, spec.value, role.value);
+        var names = {tank:'TANK', healer:'HEALER', melee:'MELEE DPS', ranged:'RANGED DPS'};
+        var preview = document.createElement('div');
+        preview.id = 'dsCharacterRolePreview';
+        preview.className = 'ds-role-preview ds-' + kind;
+        preview.innerHTML = icon(kind) + '<strong>' + names[kind] + '</strong>';
+        role.insertAdjacentElement('afterend', preview);
     }
 
     function styles() {
         if (document.getElementById('dsRoleStyles')) return;
-        var s = document.createElement('style'); s.id = 'dsRoleStyles';
+        var s = document.createElement('style');
+        s.id = 'dsRoleStyles';
         s.textContent = '.ds-role-preview{display:flex;align-items:center;gap:10px;margin-top:8px;padding:10px 12px;border:1px solid;border-radius:10px;background:#080a0e;font-weight:900;letter-spacing:.6px}.ds-role-symbol{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:9px;border:1px solid currentColor;box-shadow:0 0 13px currentColor;font-size:21px}.ds-role-symbol svg{width:25px;height:25px;fill:currentColor}.ds-tank,.ds-role-preview.ds-tank{color:#248cff}.ds-healer,.ds-role-preview.ds-healer{color:#25d968}.ds-melee,.ds-role-preview.ds-melee{color:#ff3c3c}.ds-ranged,.ds-role-preview.ds-ranged{color:#ff9d2d}.ds-role-preview.ds-tank{border-color:#1761aa}.ds-role-preview.ds-healer{border-color:#16763d}.ds-role-preview.ds-melee{border-color:#912828}.ds-role-preview.ds-ranged{border-color:#925b20}';
         document.head.appendChild(s);
     }
 
     function install() {
-        styles(); showGuildMasterInsteadOfAdmin();
-        if (typeof window.openCharacterEditor === 'function' && !window.openCharacterEditor.__dsFixed) {
-            var original = window.openCharacterEditor;
-            var fixed = async function(characterId) { var result = await original(characterId == null ? null : characterId); removeSkybornFromGame(); decorate(); return result; };
-            fixed.__dsFixed = true; window.openCharacterEditor = fixed;
-        }
+        styles();
+        removeSkybornFromGame();
+
         var modal = document.getElementById('siteModal');
         if (modal && !modal.__dsObserver) {
             modal.__dsObserver = true;
-            new MutationObserver(function(){ removeSkybornFromGame(); setTimeout(showGuildMasterInsteadOfAdmin,0); }).observe(modal,{childList:true,subtree:true});
+            new MutationObserver(function () {
+                removeSkybornFromGame();
+                showGuildMasterInsteadOfAdmin();
+            }).observe(modal, {childList:true, subtree:true});
         }
-        document.addEventListener('change', function(e){ if (e.target && (e.target.id === 'characterClass' || e.target.id === 'characterSpec')) setTimeout(decorate,0); });
-        setInterval(showGuildMasterInsteadOfAdmin, 750);
+
+        document.addEventListener('change', function(e) {
+            if (e.target && (e.target.id === 'characterClass' || e.target.id === 'characterSpec')) {
+                setTimeout(decorate, 0);
+            }
+        });
     }
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install); else install();
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
+    else install();
 })();
