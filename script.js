@@ -10,6 +10,14 @@
         if (!game.value && game.options.length) game.selectedIndex = 0;
     }
 
+    /* Display-only: the database value stays admin. */
+    function displayGuildMasterRole() {
+        var role = document.getElementById('loggedInRole');
+        if (role && String(role.textContent || '').trim().toLowerCase() === 'admin') {
+            role.textContent = 'GUILD MASTER';
+        }
+    }
+
     function roleKind(className, spec, role) {
         role = String(role || '').toUpperCase();
         className = String(className || '');
@@ -58,11 +66,21 @@
     function install() {
         styles();
         removeSkybornFromGame();
+        displayGuildMasterRole();
+
         var modal = document.getElementById('siteModal');
         if (modal && !modal.__dsObserver) {
             modal.__dsObserver = true;
-            new MutationObserver(function () { removeSkybornFromGame(); }).observe(modal, {childList:true, subtree:true});
+            new MutationObserver(function () {
+                removeSkybornFromGame();
+                displayGuildMasterRole();
+            }).observe(modal, {childList:true, subtree:true});
         }
+
+        document.addEventListener('click', function () {
+            setTimeout(displayGuildMasterRole, 0);
+        });
+
         document.addEventListener('change', function(e) {
             if (e.target && (e.target.id === 'characterClass' || e.target.id === 'characterSpec')) setTimeout(decorate, 0);
         });
