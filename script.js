@@ -21,7 +21,7 @@ async function loadDarkSlayersMembers() {
 
     const { data, error } = await darkslayersSupabase
         .from("members")
-        .select("id, created_at, name, game, class, role, rank, level")
+        .select("id, created_at, name, game, class, role, rank, level, user_id")
         .order("name", { ascending: true });
 
     if (error) {
@@ -767,7 +767,7 @@ async function getDarkSlayersProfile(user) {
     if (!darkslayersSupabase || !user) return null;
     const { data, error } = await darkslayersSupabase
         .from("profiles")
-        .select("id, display_name, role, avatar_url, avatar_frame, profile_title")
+        .select("id, display_name, role, avatar_url, avatar_frame, profile_title, avatar_status, avatar_pending_url")
         .eq("id", user.id)
         .maybeSingle();
     if (error) {
@@ -806,6 +806,10 @@ function openAccountModal(mode = "login") {
                 <button id="adminPanelButton" class="auth-submit admin-panel-button" style="display:none" onclick="openAdminPanel()">♛ ADMIN PANEL</button>
                 <button id="officerPanelButton" class="auth-submit admin-panel-button" style="display:none" onclick="openOfficerPanel()">⚔ OFFICER PANEL</button>
                 <button class="auth-submit profile-panel-button" onclick="openMyProfile()">👤 PROFILUL MEU</button>
+            ${["admin","officer"].includes(profile?.role) ? `
+                <button type="button" class="modal-link" onclick="openAvatarModeration()">🛡 MODERARE AVATARE</button>
+            ` : ""}
+
                 <button class="auth-submit auth-logout" onclick="logoutDarkSlayers()">LOGOUT</button>
             </div>`
     });
@@ -1033,10 +1037,10 @@ function renderDarkSlayersRoster(members) {
         const details = [m.class || "Clasa", m.game || ""].filter(Boolean).join(" • ");
         const level = m.level ? " • Lv. " + Number(m.level) : "";
         return `
-            <div class="roster-member" data-rank="${rank.key}" data-member-id="${Number(m.id)}">
+            <div class="roster-member ${m.user_id ? "roster-linked" : ""}" data-rank="${rank.key}" data-member-id="${Number(m.id)}">
                 <div class="roster-avatar">${rank.icon}</div>
                 <div class="roster-player">
-                    <h3>${escapeHtml(m.name || "Member")}</h3>
+                    <h3>${escapeHtml(m.name || "Member")} ${m.user_id ? '<small class="roster-linked-badge">CONT</small>' : ''}</h3>
                     <span>${escapeHtml(details)}${level}</span>
                 </div>
                 <div class="roster-rank rank-${rank.key}">${rank.label}</div>
@@ -1264,7 +1268,7 @@ async function openProfileSettings(){
 
                 <label>TITLU</label>
                 <select id="profileTitle">
-                    ${["Membru DARKSLAYERS","Raider","PvP Fighter","Dungeon Hunter","Guild Veteran"].map(x => `<option ${profile?.profile_title===x ? "selected" : ""}>${x}</option>`).join("")}
+                    ${["Membru DARKSLAYERS"].map(x => `<option ${profile?.profile_title===x ? "selected" : ""}>${x}</option>`).join("")}
                 </select>
 
                 <label>RAMA AVATAR</label>
@@ -1361,6 +1365,21 @@ function updateCharacterRole(){
     const roleEl = document.getElementById("characterCombatRole");
     if(!classEl || !specEl || !roleEl) return;
     roleEl.value = DARKSLAYERS_WOW_CLASSES[classEl.value]?.[specEl.value] || "DPS";
+}
+
+
+async function syncMyMainCharacterToRoster(){
+    if(!darkslayersSupabase) return false;
+
+    const { error } = await darkslayersSupabase.rpc("sync_my_main_character_to_roster");
+    if(error){
+        console.error("DARKSLAYERS roster sync:", error);
+        alert("Caracterul a fost salvat, dar nu am putut actualiza rosterul.");
+        return false;
+    }
+
+    await refreshDarkSlayersRoster();
+    return true;
 }
 
 async function openCharacterEditor(characterId = null){
@@ -1518,6 +1537,7 @@ async function saveMyCharacter(event, characterId){
         return;
     }
 
+    await syncMyMainCharacterToRoster();
     await openMyProfile();
 }
 
@@ -1546,6 +1566,7 @@ async function setMainCharacter(id){
         return alert("Nu am putut schimba MAIN-ul.");
     }
 
+    await syncMyMainCharacterToRoster();
     await openMyProfile();
 }
 
@@ -1566,6 +1587,7 @@ async function deleteMyCharacter(id){
         return;
     }
 
+    await syncMyMainCharacterToRoster();
     await openMyProfile();
 }
 
@@ -1819,3 +1841,119 @@ async function deleteForumReply(id,topicId){
 }
 
 document.addEventListener("DOMContentLoaded",loadForumTopics);
+
+
+/* =========================================
+   AVATAR MODERATION - DARKSLAYERS
+========================================= */
+async function getAvatarModerationStatus(){
+    const user = await getDarkSlayersUser();
+    if(!user) return { canModerate:false, user:null };
+    const profile = await getDarkSlayersProfile(user.id);
+    return {
+        canModerate: ["admin","officer"].includes(profile?.role),
+        user
+    };
+}
+
+async function loadPendingAvatars(){
+    if(!darkslayersSupabase) return [];
+    const status = await getAvatarModerationStatus();
+    if(!status.canModerate) return [];
+
+    const { data, error } = await darkslayersSupabase
+        .from("profiles")
+        .select("id, display_name, avatar_pending_url, avatar_status")
+        .eq("avatar_status", "pending")
+        .not("avatar_pending_url", "is", null)
+        .order("display_name", { ascending:true });
+
+    if(error){
+        console.error("DARKSLAYERS pending avatars:", error);
+        return [];
+    }
+    return data || [];
+}
+
+async function openAvatarModeration(){
+    const status = await getAvatarModerationStatus();
+    if(!status.canModerate){
+        alert("Doar Admin/Officer poate modera avatare.");
+        return;
+    }
+
+    const rows = await loadPendingAvatars();
+    const cards = rows.length ? rows.map(p => `
+        <div class="avatar-review-card">
+            <img src="${escapeHtml(p.avatar_pending_url || "")}" alt="Avatar in asteptare">
+            <div>
+                <strong>${escapeHtml(p.display_name || "Member")}</strong>
+                <span>Avatar in asteptare</span>
+                <div class="modal-actions">
+                    <button type="button" class="modal-link" onclick="approveAvatar('${p.id}')">APROBA</button>
+                    <button type="button" class="modal-link danger" onclick="rejectAvatar('${p.id}')">RESPINGE</button>
+                </div>
+            </div>
+        </div>
+    `).join("") : `<div class="hall-empty">Nu exista avatare in asteptare.</div>`;
+
+    openSiteModal({
+        icon:"🛡",
+        label:"DARKSLAYERS STAFF",
+        title:"MODERARE AVATARE",
+        content: cards
+    });
+}
+
+async function approveAvatar(profileId){
+    const status = await getAvatarModerationStatus();
+    if(!status.canModerate) return;
+
+    const { data: p, error: readError } = await darkslayersSupabase
+        .from("profiles")
+        .select("avatar_pending_url")
+        .eq("id", profileId)
+        .maybeSingle();
+
+    if(readError || !p?.avatar_pending_url){
+        alert("Avatarul nu mai este disponibil.");
+        return;
+    }
+
+    const { error } = await darkslayersSupabase
+        .from("profiles")
+        .update({
+            avatar_url: p.avatar_pending_url,
+            avatar_pending_url: null,
+            avatar_status: "approved"
+        })
+        .eq("id", profileId);
+
+    if(error){
+        console.error(error);
+        alert("Nu am putut aproba avatarul.");
+        return;
+    }
+    await openAvatarModeration();
+}
+
+async function rejectAvatar(profileId){
+    const status = await getAvatarModerationStatus();
+    if(!status.canModerate) return;
+
+    const { error } = await darkslayersSupabase
+        .from("profiles")
+        .update({
+            avatar_pending_url: null,
+            avatar_status: "rejected"
+        })
+        .eq("id", profileId);
+
+    if(error){
+        console.error(error);
+        alert("Nu am putut respinge avatarul.");
+        return;
+    }
+    await openAvatarModeration();
+}
+
