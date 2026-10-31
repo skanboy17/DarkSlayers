@@ -1,5 +1,5 @@
 /* DARKSLAYERS - stable base + safe UI fixes */
-document.write('<script src="script-base.js?v=20261101-accountfix1"><\/script>');
+document.write('<script src="script-base.js?v=20261101-adminrestore1"><\/script>');
 
 (function () {
     function removeSkybornFromGame() {
@@ -10,14 +10,6 @@ document.write('<script src="script-base.js?v=20261101-accountfix1"><\/script>')
             if (text === 'skyborn') option.remove();
         });
         if (!game.value && game.options.length) game.selectedIndex = 0;
-    }
-
-    function showGuildMasterInsteadOfAdmin() {
-        var role = document.getElementById('loggedInRole');
-        if (role && role.textContent.trim().toUpperCase() === 'ADMIN') {
-            role.textContent = 'GUILD MASTER';
-            role.classList.add('role-admin');
-        }
     }
 
     function roleKind(className, spec, role) {
@@ -68,20 +60,14 @@ document.write('<script src="script-base.js?v=20261101-accountfix1"><\/script>')
     function install() {
         styles();
         removeSkybornFromGame();
-
         var modal = document.getElementById('siteModal');
         if (modal && !modal.__dsObserver) {
             modal.__dsObserver = true;
-            new MutationObserver(function () {
-                removeSkybornFromGame();
-                showGuildMasterInsteadOfAdmin();
-            }).observe(modal, {childList:true, subtree:true});
+            new MutationObserver(function () { removeSkybornFromGame(); })
+                .observe(modal, {childList:true, subtree:true});
         }
-
         document.addEventListener('change', function(e) {
-            if (e.target && (e.target.id === 'characterClass' || e.target.id === 'characterSpec')) {
-                setTimeout(decorate, 0);
-            }
+            if (e.target && (e.target.id === 'characterClass' || e.target.id === 'characterSpec')) setTimeout(decorate, 0);
         });
     }
 
