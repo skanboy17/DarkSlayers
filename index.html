@@ -17,68 +17,73 @@
     const html=await r.text();
     const body=html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
     if(!body) throw new Error('Body missing');
-    const temp=document.createElement('div');
-    temp.innerHTML=body[1];
+    const temp=document.createElement('div'); temp.innerHTML=body[1];
     temp.querySelectorAll('script').forEach(s=>s.remove());
     app.replaceWith(...Array.from(temp.childNodes));
     function load(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.body.appendChild(s);});}
 
     await load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
-
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-      const originalCreateClient = window.supabase.createClient.bind(window.supabase);
-      window.supabase.createClient = function(url, key, options) {
-        const merged = Object.assign({}, options || {});
-        merged.auth = Object.assign({}, (options && options.auth) || {}, {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-          storage: window.localStorage,
-          storageKey: 'darkslayers-auth'
-        });
-        return originalCreateClient(url, key, merged);
-      };
+    if(window.supabase&&typeof window.supabase.createClient==='function'){
+      const originalCreateClient=window.supabase.createClient.bind(window.supabase);
+      window.supabase.createClient=function(url,key,options){const merged=Object.assign({},options||{});merged.auth=Object.assign({},(options&&options.auth)||{},{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage,storageKey:'darkslayers-auth'});return originalCreateClient(url,key,merged);};
     }
 
-    await load('script-base.js?v=20261101-profile1');
+    await load('script-base.js?v=20261101-forum-mainfix1');
     await load('script.js?v=20261101-profile1');
     await load('roster-fix.js?v=20261101-profile1');
     await load('hall-roster-highlight.js?v=20261101-hofsilver1');
     await load('hall-of-fame.js?v=20261101-profile1');
     await load('member-profile.js?v=20261101-clickfix2');
-    await load('forum-class-icons.js?v=20261101-directrender-final9');
 
-    if (typeof loadForumTopics === 'function') {
-      setTimeout(function(){ loadForumTopics(1); }, 100);
-      setTimeout(function(){ loadForumTopics(1); }, 800);
-    }
+    /* FORUM CLASS ICONS: inline, independent from extra JS files */
+    const forumIcons={warrior:'images/warrior.png',paladin:'images/paladin.png','death knight':'images/death-knight.png',druid:'images/druid.png',hunter:'images/hunter.png',rogue:'images/rogue.png',priest:'images/priest.png',shaman:'images/shaman.png',mage:'images/mage.png',warlock:'images/warlock.png',skyborn:'images/skyborn.png'};
+    const forumStyle=document.createElement('style');
+    forumStyle.textContent=`#forumTopics .forum-topic{display:grid!important;grid-template-columns:220px 58px minmax(0,1fr) 40px!important;align-items:center!important;gap:14px!important;min-height:86px!important}#forumTopics .forum-topic-category{grid-column:1!important}.ds-inline-forum-class{grid-column:2!important;width:48px!important;height:48px!important;display:flex!important;overflow:hidden!important;border:1px solid #8d252b!important;border-radius:5px!important;background:#070707!important;box-shadow:0 0 10px rgba(210,25,35,.28)!important}.ds-inline-forum-class img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}#forumTopics .forum-topic-main{grid-column:3!important;min-width:0!important;text-align:left!important}#forumTopics .forum-topic-arrow{grid-column:4!important}@media(max-width:700px){#forumTopics .forum-topic{grid-template-columns:100px 42px minmax(0,1fr) 24px!important;gap:8px!important}.ds-inline-forum-class{width:38px!important;height:38px!important}}`;
+    document.head.appendChild(forumStyle);
 
-    if (typeof darkslayersSupabase !== 'undefined' && darkslayersSupabase && darkslayersSupabase.auth) {
-      try { await darkslayersSupabase.auth.getSession(); } catch(e) { console.error('Session restore:', e); }
-      if (typeof updateAccountButton === 'function') await updateAccountButton();
-      if (typeof loadDarkSlayersRaidProgress === 'function') {
-        setTimeout(loadDarkSlayersRaidProgress, 150);
-        setTimeout(loadDarkSlayersRaidProgress, 900);
-      }
-      if (typeof loadForumTopics === 'function') setTimeout(function(){ loadForumTopics(1); }, 200);
-
-      darkslayersSupabase.auth.onAuthStateChange(function(){
-        setTimeout(function(){
-          if (typeof updateAccountButton === 'function') updateAccountButton();
-          if (typeof refreshAuthModal === 'function' && document.getElementById('loggedInPanel')) refreshAuthModal();
-          if (typeof loadDarkSlayersRaidProgress === 'function') loadDarkSlayersRaidProgress();
-          if (typeof loadForumTopics === 'function') loadForumTopics(DARKSLAYERS_FORUM_PAGE || 1);
-          if (typeof window.refreshHallOfFame === 'function') window.refreshHallOfFame();
-          if (typeof window.refreshHallRosterHighlight === 'function') window.refreshHallRosterHighlight();
-          if (typeof window.refreshFeaturedHallMember === 'function') window.refreshFeaturedHallMember();
-          if (typeof window.refreshForumClassIcons === 'function') setTimeout(window.refreshForumClassIcons,250);
-        }, 150);
+    function addForumClassIcons(){
+      document.querySelectorAll('#forumTopics .forum-topic').forEach(topic=>{
+        const main=topic.querySelector('.forum-topic-main');
+        const small=main&&main.querySelector('small');
+        if(!main||!small)return;
+        const text=(small.textContent||'').toLowerCase();
+        let found='';
+        for(const cls of Object.keys(forumIcons)){if(text.includes('• '+cls+' •')||text.includes('• '+cls+' ')){found=cls;break;}}
+        if(!found)return;
+        let holder=topic.querySelector('.ds-inline-forum-class');
+        if(holder&&holder.dataset.cls===found)return;
+        if(holder)holder.remove();
+        holder=document.createElement('span'); holder.className='ds-inline-forum-class'; holder.dataset.cls=found;
+        const img=document.createElement('img'); img.src=forumIcons[found]+'?v=mainfix1'; img.alt=found; holder.appendChild(img);
+        topic.insertBefore(holder,main);
       });
     }
-  } catch(e) {
-    console.error(e);
-    document.body.innerHTML='<div style="padding:40px;color:white;background:#050505;min-height:100vh;font-family:Arial"><h1 style="color:#d9272e">DARKSLAYERS</h1><p>Eroare la incarcarea site-ului.</p></div>';
-  }
+    window.refreshForumClassIcons=addForumClassIcons;
+    const forumRoot=document.getElementById('forumTopics');
+    if(forumRoot)new MutationObserver(()=>setTimeout(addForumClassIcons,0)).observe(forumRoot,{childList:true,subtree:true});
+
+    if(typeof loadForumTopics==='function'){
+      setTimeout(async function(){await loadForumTopics(1);addForumClassIcons();},100);
+      setTimeout(addForumClassIcons,500);
+      setTimeout(addForumClassIcons,1200);
+    }
+
+    if(typeof darkslayersSupabase!=='undefined'&&darkslayersSupabase&&darkslayersSupabase.auth){
+      try{await darkslayersSupabase.auth.getSession();}catch(e){console.error('Session restore:',e);}
+      if(typeof updateAccountButton==='function')await updateAccountButton();
+      if(typeof loadDarkSlayersRaidProgress==='function'){setTimeout(loadDarkSlayersRaidProgress,150);setTimeout(loadDarkSlayersRaidProgress,900);}
+      if(typeof loadForumTopics==='function')setTimeout(async function(){await loadForumTopics(1);addForumClassIcons();},200);
+      darkslayersSupabase.auth.onAuthStateChange(function(){setTimeout(function(){
+        if(typeof updateAccountButton==='function')updateAccountButton();
+        if(typeof refreshAuthModal==='function'&&document.getElementById('loggedInPanel'))refreshAuthModal();
+        if(typeof loadDarkSlayersRaidProgress==='function')loadDarkSlayersRaidProgress();
+        if(typeof loadForumTopics==='function')loadForumTopics(typeof DARKSLAYERS_FORUM_PAGE!=='undefined'?DARKSLAYERS_FORUM_PAGE:1).then(addForumClassIcons);
+        if(typeof window.refreshHallOfFame==='function')window.refreshHallOfFame();
+        if(typeof window.refreshHallRosterHighlight==='function')window.refreshHallRosterHighlight();
+        if(typeof window.refreshFeaturedHallMember==='function')window.refreshFeaturedHallMember();
+      },150);});
+    }
+  }catch(e){console.error(e);document.body.innerHTML='<div style="padding:40px;color:white;background:#050505;min-height:100vh;font-family:Arial"><h1 style="color:#d9272e">DARKSLAYERS</h1><p>Eroare la incarcarea site-ului.</p></div>';}
 })();
 </script>
 </body>
