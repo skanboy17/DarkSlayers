@@ -1,15 +1,39 @@
 /* DARKSLAYERS - FORUM COMBAT ROLE ICONS */
 (function(){
 'use strict';
-function norm(v){return String(v||'').trim().toLowerCase()}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]})}
-function roleKind(role,cls,spec){var r=norm(role),c=norm(cls),s=norm(spec);if(r.indexOf('tank')>=0)return'tank';if(r.indexOf('heal')>=0)return'healer';if(r.indexOf('ranged')>=0)return'ranged';if(r.indexOf('melee')>=0)return'melee';if(['hunter','mage','warlock'].includes(c)||(c==='priest'&&s==='shadow')||(c==='druid'&&s==='balance')||(c==='shaman'&&s==='elemental'))return'ranged';if((c==='priest'&&s!=='shadow')||(c==='druid'&&['restoration','resto'].includes(s))||(c==='shaman'&&['restoration','resto'].includes(s))||(c==='paladin'&&s==='holy'))return'healer';if((c==='warrior'&&s==='protection')||(c==='paladin'&&s==='protection')||(c==='death knight'&&s==='blood')||(c==='druid'&&['guardian','feral tank'].includes(s)))return'tank';return'melee'}
-function roleLabel(k){return {tank:'TANK',healer:'HEALER',ranged:'RANGED DPS',melee:'MELEE DPS'}[k]}
-function roleIcon(k){if(k==='tank')return '🛡';if(k==='healer')return '✚';if(k==='ranged')return '🏹';return '⚔'}
-function addCss(){if(document.getElementById('ds-forum-role-css'))return;var s=document.createElement('style');s.id='ds-forum-role-css';s.textContent='.ds-forum-combat{display:inline-flex!important;align-items:center;gap:5px;font-weight:900!important;margin-left:2px}.ds-forum-combat.tank{color:#248cff!important}.ds-forum-combat.healer{color:#25d968!important}.ds-forum-combat.melee{color:#ff3c3c!important}.ds-forum-combat.ranged{color:#ff9d2d!important}.ds-forum-combat .ri{font-size:13px}';document.head.appendChild(s)}
-async function getCharacters(){if(typeof darkslayersSupabase==='undefined'||!darkslayersSupabase)return[];var q=await darkslayersSupabase.from('characters').select('user_id,character_name,class,spec,combat_role,is_main');if(q.error){console.error('Forum roles:',q.error);return[]}return q.data||[]}
-async function apply(){addCss();var chars=await getCharacters();var mains=chars.filter(function(c){return c.is_main===true});document.querySelectorAll('.forum-topic-main small').forEach(function(el){var old=el.querySelector('.ds-forum-combat');if(old)old.remove();var text=(el.textContent||'').trim();var bits=text.split('•').map(function(x){return x.trim()});if(bits.length<4)return;var author=norm(bits[0].replace(/^de\s+/i,''));var cls=bits[2]||'';var spec=bits[3]||'';var c=mains.find(function(x){return norm(x.character_name)===author})||mains.find(function(x){return norm(x.class)===norm(cls)&&norm(x.spec)===norm(spec)})||chars.find(function(x){return norm(x.class)===norm(cls)&&norm(x.spec)===norm(spec)});var k=roleKind(c&&c.combat_role,c&&c.class||cls,c&&c.spec||spec);var span=document.createElement('span');span.className='ds-forum-combat '+k;span.innerHTML='<span class="ri">'+roleIcon(k)+'</span>'+esc(roleLabel(k));el.appendChild(document.createTextNode(' • '));el.appendChild(span)})}
-var timer;function schedule(){clearTimeout(timer);timer=setTimeout(apply,80)}
-function start(){addCss();var box=document.getElementById('forumTopics');if(box)new MutationObserver(schedule).observe(box,{childList:true,subtree:true});[100,400,900,1600,3000].forEach(function(ms){setTimeout(apply,ms)})}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();window.refreshForumRoleIcons=apply;
+function norm(v){return String(v||'').trim().toLowerCase()}
+function inferRole(cls,spec){
+  cls=norm(cls);spec=norm(spec);
+  if(['protection','blood','guardian','brewmaster','vengeance'].includes(spec)) return 'tank';
+  if(['restoration','holy','discipline','mistweaver','preservation'].includes(spec)) return 'healer';
+  if(cls==='hunter'||cls==='mage'||cls==='warlock'||(cls==='priest'&&spec==='shadow')||(cls==='druid'&&spec==='balance')||(cls==='shaman'&&spec==='elemental')) return 'ranged';
+  return 'melee';
+}
+function label(k){return {tank:'TANK',healer:'HEALER',ranged:'RANGED DPS',melee:'MELEE DPS'}[k]}
+function icon(k){
+ if(k==='tank')return '<span class="ds-forum-role-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 20 5v6c0 5.2-3.4 9.3-8 11-4.6-1.7-8-5.8-8-11V5l8-3Zm0 3L7 7v4c0 3.5 2 6.4 5 8 3-1.6 5-4.5 5-8V7l-5-2Z"/></svg></span>';
+ if(k==='healer')return '<span class="ds-forum-role-icon">✚</span>';
+ if(k==='ranged')return '<span class="ds-forum-role-icon">🏹</span>';
+ return '<span class="ds-forum-role-icon">⚔</span>';
+}
+function css(){if(document.getElementById('ds-forum-role-css'))return;var s=document.createElement('style');s.id='ds-forum-role-css';s.textContent='.ds-forum-combat{display:inline-flex;align-items:center;gap:4px;font-weight:900;margin-left:4px}.ds-forum-combat.tank{color:#248cff}.ds-forum-combat.healer{color:#25d968}.ds-forum-combat.melee{color:#ff3c3c}.ds-forum-combat.ranged{color:#ff9d2d}.ds-forum-role-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;font-size:13px;vertical-align:middle}.ds-forum-role-icon svg{width:15px;height:15px;fill:currentColor}';document.head.appendChild(s)}
+function apply(){
+ css();
+ document.querySelectorAll('.forum-topic-main small').forEach(function(el){
+   if(el.querySelector('.ds-forum-combat'))return;
+   var txt=(el.textContent||'').trim();
+   var parts=txt.split('•').map(function(x){return x.trim()});
+   if(parts.length<5)return;
+   var cls=parts[2]||'',spec=parts[3]||'';
+   var k=inferRole(cls,spec);
+   var date=parts.slice(4).join(' • ');
+   var before=parts.slice(0,4).join(' • ');
+   el.innerHTML=esc(before)+' • <span class="ds-forum-combat '+k+'">'+icon(k)+esc(label(k))+'</span> • '+esc(date);
+ });
+}
+var timer=null;function schedule(){clearTimeout(timer);timer=setTimeout(apply,80)}
+function start(){css();var box=document.getElementById('forumTopics');if(box)new MutationObserver(schedule).observe(box,{childList:true,subtree:true});schedule();setTimeout(apply,400);setTimeout(apply,1000)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+window.refreshForumRoleIcons=apply;
 })();
