@@ -28,3 +28,26 @@
 .roster-list::-webkit-scrollbar-thumb{background:#8f171d;border-radius:8px;border:1px solid #c72a32;}
 .roster-list::-webkit-scrollbar-thumb:hover{background:#c72a32;}
 @media(max-width:650px){.roster-list{max-height:392px;padding-right:5px;}}
+
+/* HEADER: keep the Horde banner centered and inside the navbar */
+.navbar .logo{
+    height:110px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding-left:20px!important;
+    overflow:hidden!important;
+}
+.navbar .horde-header-banner{
+    display:block!important;
+    width:auto!important;
+    height:104px!important;
+    max-width:100%!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    transform:translateY(0)!important;
+}
+@media(max-width:1100px){
+    .navbar .logo{padding-left:10px!important;}
+    .navbar .horde-header-banner{height:94px!important;}
+}
