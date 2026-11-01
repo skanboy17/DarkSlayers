@@ -41,7 +41,7 @@
 
     async function enrichRosterMembers(members) {
         var rows = Array.isArray(members) ? members.map(function(m){ return Object.assign({}, m); }) : [];
-        if (!window.darkslayersSupabase || !rows.length) return rows;
+        if (typeof darkslayersSupabase === 'undefined' || !darkslayersSupabase || !rows.length) return rows;
         var ids = rows.map(function(m){ return m.user_id; }).filter(Boolean);
         if (!ids.length) return rows;
         try {
@@ -129,4 +129,47 @@
         document.addEventListener('change', function(e){ if(e.target && (e.target.id==='characterClass'||e.target.id==='characterSpec')) setTimeout(decorate,0); });
     }
     install();
+})();
+
+/* DARKSLAYERS - RAID +/- AUTH FIX */
+(function () {
+    async function raidManagerStatusFix() {
+        try {
+            if (typeof darkslayersSupabase === 'undefined' || !darkslayersSupabase) return false;
+            var auth = await darkslayersSupabase.auth.getUser();
+            var user = auth && auth.data ? auth.data.user : null;
+            if (!user) return false;
+            var result = await darkslayersSupabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+            if (result.error) {
+                console.error('DARKSLAYERS raid admin check:', result.error);
+                return false;
+            }
+            var role = String(result.data && result.data.role || '').trim().toLowerCase();
+            return ['admin','guild master','guild_master','gm','officer'].includes(role);
+        } catch (e) {
+            console.error('DARKSLAYERS raid permission fix:', e);
+            return false;
+        }
+    }
+
+    window.getDarkSlayersRaidAdminStatus = raidManagerStatusFix;
+
+    function reloadRaidControls() {
+        if (typeof window.loadDarkSlayersRaidProgress === 'function') {
+            window.loadDarkSlayersRaidProgress();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(reloadRaidControls, 250);
+        setTimeout(reloadRaidControls, 1000);
+        setTimeout(reloadRaidControls, 2500);
+        try {
+            if (typeof darkslayersSupabase !== 'undefined' && darkslayersSupabase) {
+                darkslayersSupabase.auth.onAuthStateChange(function () {
+                    setTimeout(reloadRaidControls, 100);
+                });
+            }
+        } catch (e) {}
+    });
 })();
