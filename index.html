@@ -43,6 +43,7 @@
     await load('script-base.js?v=20261101-hallupload2');
     await load('script.js?v=20261101-hallupload2');
     await load('roster-fix.js?v=20261101-hallupload2');
+    await load('hall-roster-highlight.js?v=20261101-hofroster1');
     await load('hall-of-fame.js?v=20261101-hallupload2');
 
     // The page body is inserted dynamically, so DOMContentLoaded already happened.
@@ -75,6 +76,7 @@
           if (typeof loadDarkSlayersRaidProgress === 'function') loadDarkSlayersRaidProgress();
           if (typeof loadForumTopics === 'function') loadForumTopics(DARKSLAYERS_FORUM_PAGE || 1);
           if (typeof window.refreshHallOfFame === 'function') window.refreshHallOfFame();
+          if (typeof window.refreshHallRosterHighlight === 'function') window.refreshHallRosterHighlight();
         }, 150);
       });
     }
