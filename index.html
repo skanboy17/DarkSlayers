@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>DARKSLAYERS | Gaming Community</title>
-<link rel="stylesheet" href="style.css?v=20261101-authfix1">
+<link rel="stylesheet" href="style.css?v=20261101-hall1">
 </head>
 <body>
 <div id="app"></div>
@@ -41,9 +41,10 @@
       };
     }
 
-    await load('script-base.js?v=20261101-authfix1');
-    await load('script.js?v=20261101-authfix1');
-    await load('roster-fix.js?v=20261101-authfix1');
+    await load('script-base.js?v=20261101-hall1');
+    await load('script.js?v=20261101-hall1');
+    await load('roster-fix.js?v=20261101-hall1');
+    await load('hall-of-fame.js?v=20261101-hall1');
 
     // Wait until Supabase restores the saved session before updating account/raid UI.
     if (typeof darkslayersSupabase !== 'undefined' && darkslayersSupabase && darkslayersSupabase.auth) {
@@ -64,6 +65,7 @@
           if (typeof updateAccountButton === 'function') updateAccountButton();
           if (typeof refreshAuthModal === 'function' && document.getElementById('loggedInPanel')) refreshAuthModal();
           if (typeof loadDarkSlayersRaidProgress === 'function') loadDarkSlayersRaidProgress();
+          if (typeof window.refreshHallOfFame === 'function') window.refreshHallOfFame();
         }, 150);
       });
     }
