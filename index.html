@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>DARKSLAYERS | Gaming Community</title>
-<link rel="stylesheet" href="style.css?v=20261101-hallupload2">
+<link rel="stylesheet" href="style.css?v=20261101-profile1">
 </head>
 <body>
 <div id="app"></div>
@@ -40,34 +40,26 @@
       };
     }
 
-    await load('script-base.js?v=20261101-hallupload2');
-    await load('script.js?v=20261101-hallupload2');
-    await load('roster-fix.js?v=20261101-hallupload2');
-    await load('hall-roster-highlight.js?v=20261101-hofroster1');
-    await load('hall-of-fame.js?v=20261101-hallupload2');
+    await load('script-base.js?v=20261101-profile1');
+    await load('script.js?v=20261101-profile1');
+    await load('roster-fix.js?v=20261101-profile1');
+    await load('hall-roster-highlight.js?v=20261101-profile1');
+    await load('hall-of-fame.js?v=20261101-profile1');
+    await load('member-profile.js?v=20261101-profile1');
 
-    // The page body is inserted dynamically, so DOMContentLoaded already happened.
-    // Explicitly initialize features that normally depend on that event.
     if (typeof loadForumTopics === 'function') {
       setTimeout(function(){ loadForumTopics(1); }, 100);
       setTimeout(function(){ loadForumTopics(1); }, 800);
     }
 
     if (typeof darkslayersSupabase !== 'undefined' && darkslayersSupabase && darkslayersSupabase.auth) {
-      try {
-        await darkslayersSupabase.auth.getSession();
-      } catch(e) { console.error('Session restore:', e); }
-
-      if (typeof updateAccountButton === 'function') {
-        await updateAccountButton();
-      }
+      try { await darkslayersSupabase.auth.getSession(); } catch(e) { console.error('Session restore:', e); }
+      if (typeof updateAccountButton === 'function') await updateAccountButton();
       if (typeof loadDarkSlayersRaidProgress === 'function') {
         setTimeout(loadDarkSlayersRaidProgress, 150);
         setTimeout(loadDarkSlayersRaidProgress, 900);
       }
-      if (typeof loadForumTopics === 'function') {
-        setTimeout(function(){ loadForumTopics(1); }, 200);
-      }
+      if (typeof loadForumTopics === 'function') setTimeout(function(){ loadForumTopics(1); }, 200);
 
       darkslayersSupabase.auth.onAuthStateChange(function(){
         setTimeout(function(){
@@ -77,6 +69,7 @@
           if (typeof loadForumTopics === 'function') loadForumTopics(DARKSLAYERS_FORUM_PAGE || 1);
           if (typeof window.refreshHallOfFame === 'function') window.refreshHallOfFame();
           if (typeof window.refreshHallRosterHighlight === 'function') window.refreshHallRosterHighlight();
+          if (typeof window.refreshFeaturedHallMember === 'function') window.refreshFeaturedHallMember();
         }, 150);
       });
     }
