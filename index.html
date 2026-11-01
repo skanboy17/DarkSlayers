@@ -35,10 +35,10 @@
     await load('hall-of-fame.js?v=20261101-profile1');
     await load('member-profile.js?v=20261101-clickfix2');
 
-    /* FORUM CLASS ICONS: inline, independent from extra JS files */
+    /* FORUM CLASS ICONS */
     const forumIcons={warrior:'images/warrior.png',paladin:'images/paladin.png','death knight':'images/death-knight.png',druid:'images/druid.png',hunter:'images/hunter.png',rogue:'images/rogue.png',priest:'images/priest.png',shaman:'images/shaman.png',mage:'images/mage.png',warlock:'images/warlock.png',skyborn:'images/skyborn.png'};
     const forumStyle=document.createElement('style');
-    forumStyle.textContent=`#forumTopics .forum-topic{display:grid!important;grid-template-columns:220px 58px minmax(0,1fr) 40px!important;align-items:center!important;gap:14px!important;min-height:86px!important}#forumTopics .forum-topic-category{grid-column:1!important}.ds-inline-forum-class{grid-column:2!important;width:48px!important;height:48px!important;display:flex!important;overflow:hidden!important;border:1px solid #8d252b!important;border-radius:5px!important;background:#070707!important;box-shadow:0 0 10px rgba(210,25,35,.28)!important}.ds-inline-forum-class img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}#forumTopics .forum-topic-main{grid-column:3!important;min-width:0!important;text-align:left!important}#forumTopics .forum-topic-arrow{grid-column:4!important}@media(max-width:700px){#forumTopics .forum-topic{grid-template-columns:100px 42px minmax(0,1fr) 24px!important;gap:8px!important}.ds-inline-forum-class{width:38px!important;height:38px!important}}`;
+    forumStyle.textContent=`#forumTopics .forum-topic{display:grid!important;grid-template-columns:105px 52px minmax(0,1fr) 40px!important;align-items:center!important;column-gap:6px!important;min-height:86px!important}#forumTopics .forum-topic-category{grid-column:1!important;width:auto!important;margin:0!important;padding:0!important}.ds-inline-forum-class{grid-column:2!important;width:48px!important;height:48px!important;margin:0!important;display:flex!important;overflow:hidden!important;border:1px solid #8d252b!important;border-radius:5px!important;background:#070707!important;box-shadow:0 0 10px rgba(210,25,35,.28)!important}.ds-inline-forum-class img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}#forumTopics .forum-topic-main{grid-column:3!important;min-width:0!important;text-align:left!important;margin:0!important;padding-left:0!important}#forumTopics .forum-topic-arrow{grid-column:4!important}@media(max-width:700px){#forumTopics .forum-topic{grid-template-columns:78px 40px minmax(0,1fr) 24px!important;column-gap:5px!important}.ds-inline-forum-class{width:38px!important;height:38px!important}}`;
     document.head.appendChild(forumStyle);
 
     function addForumClassIcons(){
@@ -54,7 +54,7 @@
         if(holder&&holder.dataset.cls===found)return;
         if(holder)holder.remove();
         holder=document.createElement('span'); holder.className='ds-inline-forum-class'; holder.dataset.cls=found;
-        const img=document.createElement('img'); img.src=forumIcons[found]+'?v=mainfix1'; img.alt=found; holder.appendChild(img);
+        const img=document.createElement('img'); img.src=forumIcons[found]+'?v=mainfix2'; img.alt=found; holder.appendChild(img);
         topic.insertBefore(holder,main);
       });
     }
