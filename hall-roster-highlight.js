@@ -24,13 +24,9 @@ async function apply(){
  if(r.error){console.error('Hall roster highlight:',r.error);return}
  var hall={};
  (r.data||[]).forEach(function(x){if(norm(x.member_name))hall[norm(x.member_name)]={title:x.title||'HALL OF FAME',label:'🏆 HALL OF FAME',month:false}});
-
- // The featured DARKSLAYER OF THE MONTH is read directly from the homepage card.
- // This keeps the roster trophy automatically synced with whoever is selected there.
  var featured=document.querySelector('.panel.member .member-info h3');
  var featuredName=norm(featured&&featured.textContent);
  if(featuredName)hall[featuredName]={title:'DARKSLAYER OF THE MONTH',label:'🏆 MEMBRUL LUNII',month:true};
-
  document.querySelectorAll('.roster-member').forEach(function(card){
    card.classList.remove('ds-hof-member','ds-month-member');
    card.querySelectorAll('.ds-hof-badge,.ds-hof-crown').forEach(function(x){x.remove()});
@@ -42,12 +38,13 @@ async function apply(){
    var crown=document.createElement('div');crown.className='ds-hof-crown';crown.textContent='🏆';card.appendChild(crown);
  });
 }
+function scheduleApply(){clearTimeout(scheduleApply.t);scheduleApply.t=setTimeout(apply,80)}
 window.refreshHallRosterHighlight=apply;
-document.addEventListener('darkslayers:members-loaded',function(){setTimeout(apply,400)});
-document.addEventListener('darkslayers:hall-updated',function(){setTimeout(apply,100)});
+document.addEventListener('darkslayers:members-loaded',function(){setTimeout(apply,150);setTimeout(apply,600)});
+document.addEventListener('darkslayers:hall-updated',scheduleApply);
 setTimeout(apply,900);setTimeout(apply,2200);setTimeout(apply,4000);
-
-// If the Member of the Month card is refreshed dynamically, refresh the roster trophy too.
 var monthPanel=document.querySelector('.panel.member');
-if(monthPanel){var timer=null;new MutationObserver(function(){clearTimeout(timer);timer=setTimeout(apply,120)}).observe(monthPanel,{childList:true,subtree:true,characterData:true});}
+if(monthPanel){new MutationObserver(scheduleApply).observe(monthPanel,{childList:true,subtree:true,characterData:true});}
+var rosterList=document.querySelector('.roster-list');
+if(rosterList){new MutationObserver(function(mutations){var needs=false;mutations.forEach(function(m){if(m.type==='childList')needs=true});if(needs)scheduleApply()}).observe(rosterList,{childList:true,subtree:true});}
 })();
