@@ -12,10 +12,11 @@ function addCss(){
 .ds-hof-badge{display:inline-flex!important;align-items:center!important;margin-left:8px!important;padding:3px 7px!important;border:1px solid #8fefff!important;border-radius:4px!important;color:#f1fdff!important;background:#06161a!important;font-size:9px!important;font-weight:900!important;letter-spacing:.7px!important;text-shadow:0 0 8px rgba(56,232,255,.8)!important;box-shadow:inset 0 0 8px rgba(56,232,255,.10)!important}
 .ds-hof-crown{position:absolute;right:12px;top:10px;z-index:5;width:25px;height:25px;display:flex;align-items:center;justify-content:center;border:1px solid #baf6ff;border-radius:50%;background:#061216;box-shadow:0 0 9px rgba(56,232,255,.58);font-size:13px;line-height:1}
 .roster-member.ds-hof-member .roster-player h3{color:#f4feff!important;text-shadow:0 0 9px rgba(56,232,255,.72)!important}
-.roster-member.ds-month-member{border:2px solid #f0b82f!important;border-left:7px solid #f0b82f!important;background:linear-gradient(100deg,#181003,#080808 45%,#120d03)!important;box-shadow:0 0 16px rgba(240,184,47,.42),inset 0 0 22px rgba(240,184,47,.05)!important}
-.roster-member.ds-month-member:before{border-color:rgba(240,184,47,.45)!important;box-shadow:0 0 19px rgba(240,184,47,.18)!important}
-.roster-member.ds-month-member .ds-hof-badge{border-color:#f0b82f!important;color:#ffd86b!important;background:#1b1203!important;text-shadow:0 0 8px rgba(240,184,47,.75)!important}
-.roster-member.ds-month-member .ds-hof-crown{border-color:#f0b82f!important;background:#1b1203!important;box-shadow:0 0 10px rgba(240,184,47,.55)!important}
+.roster-member.ds-month-member{border:2px solid #22d3ee!important;border-left:7px solid #22d3ee!important;background:linear-gradient(100deg,#03171b,#080909 45%,#041418)!important;box-shadow:0 0 20px rgba(34,211,238,.55),inset 0 0 25px rgba(34,211,238,.08)!important}
+.roster-member.ds-month-member:before{border-color:rgba(103,232,249,.58)!important;box-shadow:0 0 22px rgba(34,211,238,.30)!important}
+.roster-member.ds-month-member .ds-hof-badge{border-color:#22d3ee!important;color:#a5f3fc!important;background:#03171b!important;text-shadow:0 0 9px rgba(34,211,238,.95)!important;box-shadow:0 0 10px rgba(34,211,238,.22),inset 0 0 8px rgba(34,211,238,.12)!important}
+.roster-member.ds-month-member .ds-hof-crown{border-color:#22d3ee!important;background:#03171b!important;box-shadow:0 0 13px rgba(34,211,238,.78)!important}
+.roster-member.ds-month-member .roster-player h3{color:#dffcff!important;text-shadow:0 0 10px rgba(34,211,238,.78)!important}
 `;document.head.appendChild(s)
 }
 function cleanName(h){
@@ -33,7 +34,6 @@ async function getAwards(){
    (r.data||[]).forEach(function(x){var n=norm(x.member_name);if(n&&!hall[n])hall[n]={title:x.title||'HALL OF FAME',label:'🏆 HALL OF FAME',month:false};});
   }catch(e){console.error('Hall roster highlight:',e)}
  }
- /* Current selected DarkSlayer of the Month. This is intentionally explicit so the roster does not depend on Hall of Fame row ordering. */
  hall['ipouncealot']={title:'DARKSLAYER OF THE MONTH',label:'🏆 MEMBRUL LUNII',month:true};
  return hall;
 }
