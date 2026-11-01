@@ -47,47 +47,9 @@
     await load('hall-of-fame.js?v=20261101-profile1');
     await load('member-profile.js?v=20261101-clickfix2');
 
-    /* Forum class icons are inline so they cannot fail because of a separate cached/404 script. */
-    const forumClassIcons={
-      'warrior':'images/warrior.png','paladin':'images/paladin.png','death knight':'images/death-knight.png',
-      'druid':'images/druid.png','hunter':'images/hunter.png','rogue':'images/rogue.png','priest':'images/priest.png',
-      'shaman':'images/shaman.png','mage':'images/mage.png','warlock':'images/warlock.png','skyborn':'images/skyborn.png'
-    };
-    const forumIconStyle=document.createElement('style');
-    forumIconStyle.textContent='.ds-forum-class-avatar{display:inline-block!important;width:28px!important;height:28px!important;min-width:28px!important;background-size:cover!important;background-position:center!important;border:1px solid #7b2929!important;box-shadow:0 0 7px rgba(210,25,35,.35)!important;border-radius:2px!important;margin-right:8px!important;vertical-align:middle!important}.forum-topic-main small.ds-has-class-icon{display:flex!important;align-items:center!important;min-height:30px!important}.ds-forum-meta-text{display:inline-block!important}';
-    document.head.appendChild(forumIconStyle);
-
-    function refreshForumClassIcons(){
-      document.querySelectorAll('.forum-topic-main small').forEach(function(el){
-        if(el.querySelector('.ds-forum-class-avatar')) return;
-        const raw=(el.textContent||'').replace(/\s+/g,' ').trim();
-        const parts=raw.split('•').map(function(x){return x.trim();});
-        if(parts.length<4) return;
-        const cls=(parts[2]||'').toLowerCase();
-        const src=forumClassIcons[cls];
-        if(!src) return;
-        el.textContent='';
-        el.classList.add('ds-has-class-icon');
-        const icon=document.createElement('span');
-        icon.className='ds-forum-class-avatar';
-        icon.title=parts[2];
-        icon.style.backgroundImage='url("'+src+'?v=forumicon3")';
-        const text=document.createElement('span');
-        text.className='ds-forum-meta-text';
-        text.textContent=raw;
-        el.appendChild(icon);
-        el.appendChild(text);
-      });
-    }
-    window.refreshForumClassIcons=refreshForumClassIcons;
-    const forumBox=document.getElementById('forumTopics');
-    if(forumBox) new MutationObserver(function(){setTimeout(refreshForumClassIcons,25);}).observe(forumBox,{childList:true,subtree:true});
-
     if (typeof loadForumTopics === 'function') {
-      setTimeout(async function(){ await loadForumTopics(1); refreshForumClassIcons(); }, 100);
-      setTimeout(async function(){ await loadForumTopics(1); refreshForumClassIcons(); }, 800);
-      setTimeout(refreshForumClassIcons,1200);
-      setTimeout(refreshForumClassIcons,2200);
+      setTimeout(function(){ loadForumTopics(1); }, 100);
+      setTimeout(function(){ loadForumTopics(1); }, 800);
     }
 
     if (typeof darkslayersSupabase !== 'undefined' && darkslayersSupabase && darkslayersSupabase.auth) {
@@ -97,18 +59,17 @@
         setTimeout(loadDarkSlayersRaidProgress, 150);
         setTimeout(loadDarkSlayersRaidProgress, 900);
       }
-      if (typeof loadForumTopics === 'function') setTimeout(async function(){ await loadForumTopics(1); refreshForumClassIcons(); }, 200);
+      if (typeof loadForumTopics === 'function') setTimeout(function(){ loadForumTopics(1); }, 200);
 
       darkslayersSupabase.auth.onAuthStateChange(function(){
-        setTimeout(async function(){
+        setTimeout(function(){
           if (typeof updateAccountButton === 'function') updateAccountButton();
           if (typeof refreshAuthModal === 'function' && document.getElementById('loggedInPanel')) refreshAuthModal();
           if (typeof loadDarkSlayersRaidProgress === 'function') loadDarkSlayersRaidProgress();
-          if (typeof loadForumTopics === 'function') await loadForumTopics(DARKSLAYERS_FORUM_PAGE || 1);
+          if (typeof loadForumTopics === 'function') loadForumTopics(DARKSLAYERS_FORUM_PAGE || 1);
           if (typeof window.refreshHallOfFame === 'function') window.refreshHallOfFame();
           if (typeof window.refreshHallRosterHighlight === 'function') window.refreshHallRosterHighlight();
           if (typeof window.refreshFeaturedHallMember === 'function') window.refreshFeaturedHallMember();
-          refreshForumClassIcons();
         }, 150);
       });
     }
