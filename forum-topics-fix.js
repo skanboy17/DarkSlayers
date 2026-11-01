@@ -9,9 +9,9 @@ function installForumClassStyles() {
     style.textContent = `
     #forumTopics .forum-topic.ds-forum-topic-with-class{
         display:grid!important;
-        grid-template-columns:170px 58px minmax(0,1fr) 40px!important;
+        grid-template-columns:120px 50px minmax(0,1fr) 40px!important;
         align-items:center!important;
-        column-gap:8px!important;
+        column-gap:6px!important;
         min-height:86px!important;
     }
     #forumTopics .forum-topic.ds-forum-topic-with-class .forum-topic-category{grid-column:1!important;}
@@ -31,7 +31,7 @@ function installForumClassStyles() {
     #forumTopics .forum-topic.ds-forum-topic-with-class .forum-topic-arrow{grid-column:4!important;}
     @media(max-width:700px){
         #forumTopics .forum-topic.ds-forum-topic-with-class{
-            grid-template-columns:100px 42px minmax(0,1fr) 24px!important;column-gap:8px!important;
+            grid-template-columns:88px 40px minmax(0,1fr) 24px!important;column-gap:5px!important;
         }
         #forumTopics .ds-forum-topic-class{width:38px!important;height:38px!important;}
     }`;
