@@ -25,20 +25,16 @@ function cleanName(h){
  return norm(clone.textContent);
 }
 async function getAwards(){
- var c=db();if(!c)return{};
- var hall={};
- try{
+ var c=db();var hall={};
+ if(c){
+  try{
    var r=await c.from('hall_of_fame').select('member_name,title,created_at').order('created_at',{ascending:false});
    if(r.error)throw r.error;
    (r.data||[]).forEach(function(x){var n=norm(x.member_name);if(n&&!hall[n])hall[n]={title:x.title||'HALL OF FAME',label:'🏆 HALL OF FAME',month:false};});
-   if(r.data&&r.data[0]){
-     var latest=norm(r.data[0].member_name);
-     if(latest)hall[latest]={title:'DARKSLAYER OF THE MONTH',label:'🏆 MEMBRUL LUNII',month:true};
-   }
- }catch(e){console.error('Hall roster highlight:',e)}
- var featured=document.querySelector('.panel.member .member-info h3');
- var featuredName=norm(featured&&featured.textContent);
- if(featuredName&&featuredName!=='skanners')hall[featuredName]={title:'DARKSLAYER OF THE MONTH',label:'🏆 MEMBRUL LUNII',month:true};
+  }catch(e){console.error('Hall roster highlight:',e)}
+ }
+ /* Current selected DarkSlayer of the Month. This is intentionally explicit so the roster does not depend on Hall of Fame row ordering. */
+ hall['ipouncealot']={title:'DARKSLAYER OF THE MONTH',label:'🏆 MEMBRUL LUNII',month:true};
  return hall;
 }
 async function apply(){
@@ -60,7 +56,5 @@ document.addEventListener('darkslayers:hall-updated',function(){setTimeout(apply
 setTimeout(apply,500);setTimeout(apply,1200);setTimeout(apply,2500);setTimeout(apply,5000);
 var roster=document.querySelector('.roster-list');
 if(roster){var rt=null;new MutationObserver(function(muts){var external=muts.some(function(m){return Array.from(m.addedNodes||[]).some(function(n){return n.nodeType===1&&!n.classList.contains('ds-hof-badge')&&!n.classList.contains('ds-hof-crown')})});if(external){clearTimeout(rt);rt=setTimeout(apply,100)}}).observe(roster,{childList:true,subtree:true});}
-var monthPanel=document.querySelector('.panel.member');
-if(monthPanel){var mt=null;new MutationObserver(function(){clearTimeout(mt);mt=setTimeout(apply,100)}).observe(monthPanel,{childList:true,subtree:true,characterData:true});}
 setInterval(function(){apply()},3000);
 })();
