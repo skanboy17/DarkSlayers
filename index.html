@@ -46,6 +46,7 @@
     await load('hall-roster-highlight.js?v=20261101-hofsilver1');
     await load('hall-of-fame.js?v=20261101-profile1');
     await load('member-profile.js?v=20261101-clickfix2');
+    await load('forum-class-icons.js?v=20261101-classicons-final1');
 
     if (typeof loadForumTopics === 'function') {
       setTimeout(function(){ loadForumTopics(1); }, 100);
@@ -70,6 +71,7 @@
           if (typeof window.refreshHallOfFame === 'function') window.refreshHallOfFame();
           if (typeof window.refreshHallRosterHighlight === 'function') window.refreshHallRosterHighlight();
           if (typeof window.refreshFeaturedHallMember === 'function') window.refreshFeaturedHallMember();
+          if (typeof window.refreshForumClassIcons === 'function') setTimeout(window.refreshForumClassIcons,250);
         }, 150);
       });
     }
