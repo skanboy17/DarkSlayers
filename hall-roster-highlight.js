@@ -10,7 +10,7 @@ function addCss(){
 .roster-member.ds-hof-member{position:relative!important;border:2px solid #d7a928!important;border-left:7px solid #ffd45a!important;background:linear-gradient(100deg,#120d03,#080707 40%,#100b02)!important;box-shadow:0 0 12px rgba(255,203,70,.55),inset 0 0 24px rgba(255,190,40,.07)!important}
 .roster-member.ds-hof-member:before{content:"";position:absolute;inset:-3px;pointer-events:none;border:1px solid rgba(255,225,130,.3);box-shadow:0 0 20px rgba(255,190,40,.2)}
 .ds-hof-badge{display:inline-flex!important;align-items:center!important;margin-left:8px!important;padding:3px 7px!important;border:1px solid #d7a928!important;border-radius:4px!important;color:#ffd45a!important;background:#171004!important;font-size:9px!important;font-weight:900!important;letter-spacing:.7px!important;text-shadow:0 0 8px rgba(255,210,70,.5)!important}
-.ds-hof-crown{position:absolute;right:-8px;top:-14px;z-index:5;width:31px;height:31px;display:flex;align-items:center;justify-content:center;border:1px solid #d7a928;border-radius:50%;background:#090703;box-shadow:0 0 12px rgba(255,200,50,.65);font-size:17px}
+.ds-hof-crown{position:absolute;right:12px;top:10px;z-index:5;width:25px;height:25px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(215,169,40,.9);border-radius:50%;background:#0b0802;box-shadow:0 0 8px rgba(255,200,50,.42);font-size:13px;line-height:1}
 .roster-member.ds-hof-member .roster-player h3{color:#ffe08a!important;text-shadow:0 0 10px rgba(255,200,60,.35)!important}
 `;document.head.appendChild(s)
 }
