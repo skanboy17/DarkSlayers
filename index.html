@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>DARKSLAYERS | Gaming Community</title>
-<link rel="stylesheet" href="style.css?v=20261101-raidcontrols1">
+<link rel="stylesheet" href="style.css?v=20261101-authfix1">
 </head>
 <body>
 <div id="app"></div>
@@ -22,24 +22,49 @@
     temp.querySelectorAll('script').forEach(s=>s.remove());
     app.replaceWith(...Array.from(temp.childNodes));
     function load(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.body.appendChild(s);});}
-    await load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
-    await load('script-base.js?v=20261101-raidcontrols1');
-    await load('script.js?v=20261101-raidcontrols1');
-    await load('roster-fix.js?v=20261101-raidcontrols1');
 
-    // Scripts are loaded dynamically, so DOMContentLoaded may already have fired.
-    // Explicitly initialize raid progress after all scripts are ready.
-    if (typeof loadDarkSlayersRaidProgress === 'function') {
-      setTimeout(loadDarkSlayersRaidProgress, 100);
-      setTimeout(loadDarkSlayersRaidProgress, 800);
+    await load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
+
+    // Force Supabase Auth to keep the login in this browser.
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      const originalCreateClient = window.supabase.createClient.bind(window.supabase);
+      window.supabase.createClient = function(url, key, options) {
+        const merged = Object.assign({}, options || {});
+        merged.auth = Object.assign({}, (options && options.auth) || {}, {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storage: window.localStorage,
+          storageKey: 'darkslayers-auth'
+        });
+        return originalCreateClient(url, key, merged);
+      };
     }
 
-    // Re-render raid controls after auth state is restored/changed.
+    await load('script-base.js?v=20261101-authfix1');
+    await load('script.js?v=20261101-authfix1');
+    await load('roster-fix.js?v=20261101-authfix1');
+
+    // Wait until Supabase restores the saved session before updating account/raid UI.
     if (typeof darkslayersSupabase !== 'undefined' && darkslayersSupabase && darkslayersSupabase.auth) {
+      try {
+        await darkslayersSupabase.auth.getSession();
+      } catch(e) { console.error('Session restore:', e); }
+
+      if (typeof updateAccountButton === 'function') {
+        await updateAccountButton();
+      }
+      if (typeof loadDarkSlayersRaidProgress === 'function') {
+        setTimeout(loadDarkSlayersRaidProgress, 150);
+        setTimeout(loadDarkSlayersRaidProgress, 900);
+      }
+
       darkslayersSupabase.auth.onAuthStateChange(function(){
-        if (typeof loadDarkSlayersRaidProgress === 'function') {
-          setTimeout(loadDarkSlayersRaidProgress, 150);
-        }
+        setTimeout(function(){
+          if (typeof updateAccountButton === 'function') updateAccountButton();
+          if (typeof refreshAuthModal === 'function' && document.getElementById('loggedInPanel')) refreshAuthModal();
+          if (typeof loadDarkSlayersRaidProgress === 'function') loadDarkSlayersRaidProgress();
+        }, 150);
       });
     }
   } catch(e) {
