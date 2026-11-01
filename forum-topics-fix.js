@@ -1,37 +1,61 @@
-/* DARKSLAYERS - DIRECT FORUM CLASS ICON FIX */
+/* DARKSLAYERS - FORUM CLASS ICON FIX - TIGHT */
 (function () {
 "use strict";
 
 function installForumClassStyles() {
-    if (document.getElementById("ds-forum-direct-class-css")) return;
+    if (document.getElementById("ds-forum-direct-class-css")) {
+        document.getElementById("ds-forum-direct-class-css").remove();
+    }
     const style = document.createElement("style");
     style.id = "ds-forum-direct-class-css";
     style.textContent = `
     #forumTopics .forum-topic.ds-forum-topic-with-class{
         display:grid!important;
-        grid-template-columns:120px 50px minmax(0,1fr) 40px!important;
+        grid-template-columns:105px 52px minmax(0,1fr) 40px!important;
         align-items:center!important;
         column-gap:6px!important;
         min-height:86px!important;
     }
-    #forumTopics .forum-topic.ds-forum-topic-with-class .forum-topic-category{grid-column:1!important;}
+    #forumTopics .forum-topic.ds-forum-topic-with-class .forum-topic-category{
+        grid-column:1!important;
+        width:auto!important;
+        margin:0!important;
+        padding:0!important;
+    }
     #forumTopics .ds-forum-topic-class{
         grid-column:2!important;
-        width:48px!important;height:48px!important;
-        display:flex!important;align-items:center!important;justify-content:center!important;
-        overflow:hidden!important;border:1px solid #8d252b!important;border-radius:5px!important;
-        background:#070707!important;box-shadow:0 0 10px rgba(210,25,35,.28)!important;
+        width:48px!important;
+        height:48px!important;
+        margin:0!important;
+        display:flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        overflow:hidden!important;
+        border:1px solid #8d252b!important;
+        border-radius:5px!important;
+        background:#070707!important;
+        box-shadow:0 0 10px rgba(210,25,35,.28)!important;
     }
     #forumTopics .ds-forum-topic-class img{
-        display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;
+        display:block!important;
+        width:100%!important;
+        height:100%!important;
+        object-fit:cover!important;
     }
     #forumTopics .forum-topic.ds-forum-topic-with-class .forum-topic-main{
-        grid-column:3!important;min-width:0!important;text-align:left!important;
+        grid-column:3!important;
+        min-width:0!important;
+        text-align:left!important;
+        margin:0!important;
+        padding-left:0!important;
     }
-    #forumTopics .forum-topic.ds-forum-topic-with-class .forum-topic-arrow{grid-column:4!important;}
+    #forumTopics .forum-topic.ds-forum-topic-with-class .forum-topic-arrow{
+        grid-column:4!important;
+    }
     @media(max-width:700px){
         #forumTopics .forum-topic.ds-forum-topic-with-class{
-            grid-template-columns:88px 40px minmax(0,1fr) 24px!important;column-gap:5px!important;
+            grid-template-columns:78px 40px minmax(0,1fr) 24px!important;
+            column-gap:5px!important;
         }
         #forumTopics .ds-forum-topic-class{width:38px!important;height:38px!important;}
     }`;
@@ -89,7 +113,7 @@ async function directForumTopics(page) {
         return `<button class="forum-topic ds-forum-topic-with-class" onclick="openForumTopic(${Number(t.id)})">
             <span class="forum-topic-category">${t.pinned ? "📌 " : ""}${escapeHtml(t.category)}</span>
             <span class="ds-forum-topic-class" title="${escapeHtml(className || "Clasa")}">
-                ${classIcon ? `<img src="${classIcon}?v=forum-direct-final" alt="${escapeHtml(className)}">` : ""}
+                ${classIcon ? `<img src="${classIcon}?v=forum-tight-1" alt="${escapeHtml(className)}">` : ""}
             </span>
             <span class="forum-topic-main">
                 <strong>${t.pinned ? "📌 " : ""}${escapeHtml(t.title)}</strong>
