@@ -12,39 +12,55 @@ function addCss(){
 .ds-hof-badge{display:inline-flex!important;align-items:center!important;margin-left:8px!important;padding:3px 7px!important;border:1px solid #8fefff!important;border-radius:4px!important;color:#f1fdff!important;background:#06161a!important;font-size:9px!important;font-weight:900!important;letter-spacing:.7px!important;text-shadow:0 0 8px rgba(56,232,255,.8)!important;box-shadow:inset 0 0 8px rgba(56,232,255,.10)!important}
 .ds-hof-crown{position:absolute;right:12px;top:10px;z-index:5;width:25px;height:25px;display:flex;align-items:center;justify-content:center;border:1px solid #baf6ff;border-radius:50%;background:#061216;box-shadow:0 0 9px rgba(56,232,255,.58);font-size:13px;line-height:1}
 .roster-member.ds-hof-member .roster-player h3{color:#f4feff!important;text-shadow:0 0 9px rgba(56,232,255,.72)!important}
-.roster-member.ds-month-member{border-color:#f0b82f!important;border-left-color:#f0b82f!important;box-shadow:0 0 16px rgba(240,184,47,.42),inset 0 0 22px rgba(240,184,47,.05)!important}
+.roster-member.ds-month-member{border:2px solid #f0b82f!important;border-left:7px solid #f0b82f!important;background:linear-gradient(100deg,#181003,#080808 45%,#120d03)!important;box-shadow:0 0 16px rgba(240,184,47,.42),inset 0 0 22px rgba(240,184,47,.05)!important}
 .roster-member.ds-month-member:before{border-color:rgba(240,184,47,.45)!important;box-shadow:0 0 19px rgba(240,184,47,.18)!important}
 .roster-member.ds-month-member .ds-hof-badge{border-color:#f0b82f!important;color:#ffd86b!important;background:#1b1203!important;text-shadow:0 0 8px rgba(240,184,47,.75)!important}
 .roster-member.ds-month-member .ds-hof-crown{border-color:#f0b82f!important;background:#1b1203!important;box-shadow:0 0 10px rgba(240,184,47,.55)!important}
 `;document.head.appendChild(s)
 }
-async function apply(){
- addCss();var c=db();if(!c)return;
- var r=await c.from('hall_of_fame').select('member_name,title');
- if(r.error){console.error('Hall roster highlight:',r.error);return}
+function cleanName(h){
+ if(!h)return'';
+ var clone=h.cloneNode(true);
+ clone.querySelectorAll('small,.ds-hof-badge').forEach(function(x){x.remove()});
+ return norm(clone.textContent);
+}
+async function getAwards(){
+ var c=db();if(!c)return{};
  var hall={};
- (r.data||[]).forEach(function(x){if(norm(x.member_name))hall[norm(x.member_name)]={title:x.title||'HALL OF FAME',label:'🏆 HALL OF FAME',month:false}});
+ try{
+   var r=await c.from('hall_of_fame').select('member_name,title,created_at').order('created_at',{ascending:false});
+   if(r.error)throw r.error;
+   (r.data||[]).forEach(function(x){var n=norm(x.member_name);if(n&&!hall[n])hall[n]={title:x.title||'HALL OF FAME',label:'🏆 HALL OF FAME',month:false};});
+   if(r.data&&r.data[0]){
+     var latest=norm(r.data[0].member_name);
+     if(latest)hall[latest]={title:'DARKSLAYER OF THE MONTH',label:'🏆 MEMBRUL LUNII',month:true};
+   }
+ }catch(e){console.error('Hall roster highlight:',e)}
  var featured=document.querySelector('.panel.member .member-info h3');
  var featuredName=norm(featured&&featured.textContent);
- if(featuredName)hall[featuredName]={title:'DARKSLAYER OF THE MONTH',label:'🏆 MEMBRUL LUNII',month:true};
+ if(featuredName&&featuredName!=='skanners')hall[featuredName]={title:'DARKSLAYER OF THE MONTH',label:'🏆 MEMBRUL LUNII',month:true};
+ return hall;
+}
+async function apply(){
+ addCss();
+ var hall=await getAwards();
  document.querySelectorAll('.roster-member').forEach(function(card){
    card.classList.remove('ds-hof-member','ds-month-member');
    card.querySelectorAll('.ds-hof-badge,.ds-hof-crown').forEach(function(x){x.remove()});
    var h=card.querySelector('.roster-player h3');if(!h)return;
-   var clone=h.cloneNode(true);clone.querySelectorAll('small,.ds-hof-badge').forEach(function(x){x.remove()});
-   var name=norm(clone.textContent),award=hall[name];if(!award)return;
+   var name=cleanName(h),award=hall[name];if(!award)return;
    card.classList.add('ds-hof-member');if(award.month)card.classList.add('ds-month-member');
    var badge=document.createElement('span');badge.className='ds-hof-badge';badge.title=award.title;badge.textContent=award.label;h.appendChild(badge);
    var crown=document.createElement('div');crown.className='ds-hof-crown';crown.textContent='🏆';card.appendChild(crown);
  });
 }
-function scheduleApply(){clearTimeout(scheduleApply.t);scheduleApply.t=setTimeout(apply,80)}
 window.refreshHallRosterHighlight=apply;
-document.addEventListener('darkslayers:members-loaded',function(){setTimeout(apply,150);setTimeout(apply,600)});
-document.addEventListener('darkslayers:hall-updated',scheduleApply);
-setTimeout(apply,900);setTimeout(apply,2200);setTimeout(apply,4000);
+document.addEventListener('darkslayers:members-loaded',function(){setTimeout(apply,150);setTimeout(apply,700)});
+document.addEventListener('darkslayers:hall-updated',function(){setTimeout(apply,100)});
+setTimeout(apply,500);setTimeout(apply,1200);setTimeout(apply,2500);setTimeout(apply,5000);
+var roster=document.querySelector('.roster-list');
+if(roster){var rt=null;new MutationObserver(function(muts){var external=muts.some(function(m){return Array.from(m.addedNodes||[]).some(function(n){return n.nodeType===1&&!n.classList.contains('ds-hof-badge')&&!n.classList.contains('ds-hof-crown')})});if(external){clearTimeout(rt);rt=setTimeout(apply,100)}}).observe(roster,{childList:true,subtree:true});}
 var monthPanel=document.querySelector('.panel.member');
-if(monthPanel){new MutationObserver(scheduleApply).observe(monthPanel,{childList:true,subtree:true,characterData:true});}
-var rosterList=document.querySelector('.roster-list');
-if(rosterList){new MutationObserver(function(mutations){var needs=false;mutations.forEach(function(m){if(m.type==='childList')needs=true});if(needs)scheduleApply()}).observe(rosterList,{childList:true,subtree:true});}
+if(monthPanel){var mt=null;new MutationObserver(function(){clearTimeout(mt);mt=setTimeout(apply,100)}).observe(monthPanel,{childList:true,subtree:true,characterData:true});}
+setInterval(function(){apply()},3000);
 })();
