@@ -46,11 +46,12 @@
     await load('hall-roster-highlight.js?v=20261101-hofsilver1');
     await load('hall-of-fame.js?v=20261101-profile1');
     await load('member-profile.js?v=20261101-clickfix2');
-    await load('forum-role-icons.js?v=20261101-forumroles1');
+    await load('forum-role-icons.js?v=20261101-forumroles2');
 
     if (typeof loadForumTopics === 'function') {
       setTimeout(function(){ loadForumTopics(1); }, 100);
       setTimeout(function(){ loadForumTopics(1); }, 800);
+      setTimeout(function(){ if(typeof window.refreshForumRoleIcons==='function') window.refreshForumRoleIcons(); }, 1200);
     }
 
     if (typeof darkslayersSupabase !== 'undefined' && darkslayersSupabase && darkslayersSupabase.auth) {
