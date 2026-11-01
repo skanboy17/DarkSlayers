@@ -1,41 +1,55 @@
-/* DARKSLAYERS - FORUM COMBAT ROLE ICONS */
+/* DARKSLAYERS - FORUM CLASS ICONS */
 (function(){
 'use strict';
-function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]})}
+
+var CLASS_ICONS={
+ 'warrior':'images/warrior.png',
+ 'paladin':'images/paladin.png',
+ 'death knight':'images/death-knight.png',
+ 'druid':'images/druid.png',
+ 'hunter':'images/hunter.png',
+ 'rogue':'images/rogue.png',
+ 'priest':'images/priest.png',
+ 'shaman':'images/shaman.png',
+ 'mage':'images/mage.png',
+ 'warlock':'images/warlock.png',
+ 'skyborn':'images/skyborn.png'
+};
 function norm(v){return String(v||'').trim().toLowerCase()}
-function inferRole(cls,spec){
-  cls=norm(cls);spec=norm(spec);
-  if(['protection','blood','guardian','brewmaster','vengeance'].includes(spec)) return 'tank';
-  if(['restoration','holy','discipline','mistweaver','preservation'].includes(spec)) return 'healer';
-  if(cls==='hunter'||cls==='mage'||cls==='warlock'||(cls==='priest'&&spec==='shadow')||(cls==='druid'&&spec==='balance')||(cls==='shaman'&&spec==='elemental')) return 'ranged';
-  return 'melee';
+function css(){
+ if(document.getElementById('ds-forum-class-css'))return;
+ var s=document.createElement('style');
+ s.id='ds-forum-class-css';
+ s.textContent='.ds-forum-class-icon{width:26px;height:26px;object-fit:cover;border:1px solid #6b2525;box-shadow:0 0 7px rgba(210,25,35,.28);vertical-align:middle;margin-right:7px;border-radius:2px}.forum-topic-main small{display:flex;align-items:center;flex-wrap:wrap;gap:0}';
+ document.head.appendChild(s);
 }
-function label(k){return {tank:'TANK',healer:'HEALER',ranged:'RANGED DPS',melee:'MELEE DPS'}[k]}
-function icon(k){
- if(k==='tank')return '<span class="ds-forum-role-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 20 5v6c0 5.2-3.4 9.3-8 11-4.6-1.7-8-5.8-8-11V5l8-3Zm0 3L7 7v4c0 3.5 2 6.4 5 8 3-1.6 5-4.5 5-8V7l-5-2Z"/></svg></span>';
- if(k==='healer')return '<span class="ds-forum-role-icon">✚</span>';
- if(k==='ranged')return '<span class="ds-forum-role-icon">🏹</span>';
- return '<span class="ds-forum-role-icon">⚔</span>';
-}
-function css(){if(document.getElementById('ds-forum-role-css'))return;var s=document.createElement('style');s.id='ds-forum-role-css';s.textContent='.ds-forum-combat{display:inline-flex;align-items:center;gap:4px;font-weight:900;margin-left:4px}.ds-forum-combat.tank{color:#248cff}.ds-forum-combat.healer{color:#25d968}.ds-forum-combat.melee{color:#ff3c3c}.ds-forum-combat.ranged{color:#ff9d2d}.ds-forum-role-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;font-size:13px;vertical-align:middle}.ds-forum-role-icon svg{width:15px;height:15px;fill:currentColor}';document.head.appendChild(s)}
 function apply(){
  css();
  document.querySelectorAll('.forum-topic-main small').forEach(function(el){
-   if(el.querySelector('.ds-forum-combat'))return;
+   if(el.querySelector('.ds-forum-class-icon'))return;
    var txt=(el.textContent||'').trim();
    var parts=txt.split('•').map(function(x){return x.trim()});
-   /* Forum format: de Name • RANK • Class • Spec • date. Date itself can contain commas, not bullets. */
-   if(parts.length<5)return;
-   var cls=parts[2]||'',spec=parts[3]||'';
-   if(!cls)return;
-   var k=inferRole(cls,spec);
-   var date=parts.slice(4).join(' • ');
-   var before=parts.slice(0,4).join(' • ');
-   el.innerHTML=esc(before)+' • <span class="ds-forum-combat '+k+'">'+icon(k)+esc(label(k))+'</span> • '+esc(date);
+   if(parts.length<4)return;
+   var cls=norm(parts[2]);
+   var src=CLASS_ICONS[cls];
+   if(!src)return;
+   var img=document.createElement('img');
+   img.className='ds-forum-class-icon';
+   img.src=src;
+   img.alt=parts[2]||'Class';
+   img.title=parts[2]||'Class';
+   el.insertBefore(img,el.firstChild);
  });
 }
-var timer=null;function schedule(){clearTimeout(timer);timer=setTimeout(apply,30)}
-function start(){css();var box=document.getElementById('forumTopics');if(box)new MutationObserver(schedule).observe(box,{childList:true,subtree:true});schedule();setTimeout(apply,150);setTimeout(apply,500);setTimeout(apply,1200)}
+var timer=null;
+function schedule(){clearTimeout(timer);timer=setTimeout(apply,40)}
+function start(){
+ css();
+ var box=document.getElementById('forumTopics');
+ if(box)new MutationObserver(schedule).observe(box,{childList:true,subtree:true});
+ schedule();setTimeout(apply,200);setTimeout(apply,600);setTimeout(apply,1300);
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 window.refreshForumRoleIcons=apply;
+window.refreshForumClassIcons=apply;
 })();
