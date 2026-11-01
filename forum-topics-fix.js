@@ -9,9 +9,9 @@ function installForumClassStyles() {
     style.textContent = `
     #forumTopics .forum-topic.ds-forum-topic-with-class{
         display:grid!important;
-        grid-template-columns:220px 58px minmax(0,1fr) 40px!important;
+        grid-template-columns:170px 58px minmax(0,1fr) 40px!important;
         align-items:center!important;
-        column-gap:14px!important;
+        column-gap:8px!important;
         min-height:86px!important;
     }
     #forumTopics .forum-topic.ds-forum-topic-with-class .forum-topic-category{grid-column:1!important;}
