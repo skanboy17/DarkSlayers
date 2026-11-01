@@ -24,16 +24,18 @@ function apply(){
    if(el.querySelector('.ds-forum-combat'))return;
    var txt=(el.textContent||'').trim();
    var parts=txt.split('•').map(function(x){return x.trim()});
+   /* Forum format: de Name • RANK • Class • Spec • date. Date itself can contain commas, not bullets. */
    if(parts.length<5)return;
    var cls=parts[2]||'',spec=parts[3]||'';
+   if(!cls)return;
    var k=inferRole(cls,spec);
    var date=parts.slice(4).join(' • ');
    var before=parts.slice(0,4).join(' • ');
    el.innerHTML=esc(before)+' • <span class="ds-forum-combat '+k+'">'+icon(k)+esc(label(k))+'</span> • '+esc(date);
  });
 }
-var timer=null;function schedule(){clearTimeout(timer);timer=setTimeout(apply,80)}
-function start(){css();var box=document.getElementById('forumTopics');if(box)new MutationObserver(schedule).observe(box,{childList:true,subtree:true});schedule();setTimeout(apply,400);setTimeout(apply,1000)}
+var timer=null;function schedule(){clearTimeout(timer);timer=setTimeout(apply,30)}
+function start(){css();var box=document.getElementById('forumTopics');if(box)new MutationObserver(schedule).observe(box,{childList:true,subtree:true});schedule();setTimeout(apply,150);setTimeout(apply,500);setTimeout(apply,1200)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 window.refreshForumRoleIcons=apply;
 })();
