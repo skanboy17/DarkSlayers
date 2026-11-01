@@ -52,7 +52,7 @@
     .navbar .horde-header-banner{height:94px!important;}
 }
 
-/* HEADER DESKTOP: make room for all links including Twitch */
+/* HEADER DESKTOP: balanced navigation + account/social controls aligned right */
 @media(min-width:1200px){
     .navbar .logo{
         width:23%!important;
@@ -62,6 +62,7 @@
     .menu{
         flex:1 1 auto!important;
         min-width:0!important;
+        justify-content:flex-start!important;
     }
     .menu a{
         padding-left:12px!important;
@@ -70,8 +71,9 @@
     }
     .social{
         flex:0 0 auto!important;
-        gap:8px!important;
-        padding-left:10px!important;
+        margin-left:auto!important;
+        gap:10px!important;
+        padding-left:22px!important;
         padding-right:16px!important;
         white-space:nowrap!important;
     }
