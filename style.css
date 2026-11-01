@@ -13,3 +13,18 @@
 .ds-combat-role-card.melee{color:#ff4545;border-color:rgba(255,69,69,.5);}
 .ds-combat-role-card strong{color:inherit;text-shadow:0 0 10px currentColor;}
 @media(max-width:650px){.ds-combat-role-card{min-height:58px;padding:9px 12px}.ds-role-svg{width:40px;height:40px}.ds-role-svg svg{width:29px;height:29px}}
+
+/* ROSTER: keep roughly 5 members visible, then scroll inside the list */
+.roster-list{
+    max-height:392px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding-right:8px;
+    scrollbar-width:thin;
+    scrollbar-color:#8f171d #0a0a0a;
+}
+.roster-list::-webkit-scrollbar{width:8px;}
+.roster-list::-webkit-scrollbar-track{background:#0a0a0a;border-radius:8px;}
+.roster-list::-webkit-scrollbar-thumb{background:#8f171d;border-radius:8px;border:1px solid #c72a32;}
+.roster-list::-webkit-scrollbar-thumb:hover{background:#c72a32;}
+@media(max-width:650px){.roster-list{max-height:392px;padding-right:5px;}}
