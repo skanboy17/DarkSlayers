@@ -1,4 +1,4 @@
-/* DARKSLAYERS - HALL OF FAME ROSTER HIGHLIGHT */
+/* DARKSLAYERS - HALL OF FAME + MEMBER OF THE MONTH ROSTER HIGHLIGHT */
 (function(){
 'use strict';
 function db(){try{return typeof darkslayersSupabase!=='undefined'?darkslayersSupabase:null}catch(e){return null}}
@@ -12,26 +12,42 @@ function addCss(){
 .ds-hof-badge{display:inline-flex!important;align-items:center!important;margin-left:8px!important;padding:3px 7px!important;border:1px solid #8fefff!important;border-radius:4px!important;color:#f1fdff!important;background:#06161a!important;font-size:9px!important;font-weight:900!important;letter-spacing:.7px!important;text-shadow:0 0 8px rgba(56,232,255,.8)!important;box-shadow:inset 0 0 8px rgba(56,232,255,.10)!important}
 .ds-hof-crown{position:absolute;right:12px;top:10px;z-index:5;width:25px;height:25px;display:flex;align-items:center;justify-content:center;border:1px solid #baf6ff;border-radius:50%;background:#061216;box-shadow:0 0 9px rgba(56,232,255,.58);font-size:13px;line-height:1}
 .roster-member.ds-hof-member .roster-player h3{color:#f4feff!important;text-shadow:0 0 9px rgba(56,232,255,.72)!important}
+.roster-member.ds-month-member{border-color:#f0b82f!important;border-left-color:#f0b82f!important;box-shadow:0 0 16px rgba(240,184,47,.42),inset 0 0 22px rgba(240,184,47,.05)!important}
+.roster-member.ds-month-member:before{border-color:rgba(240,184,47,.45)!important;box-shadow:0 0 19px rgba(240,184,47,.18)!important}
+.roster-member.ds-month-member .ds-hof-badge{border-color:#f0b82f!important;color:#ffd86b!important;background:#1b1203!important;text-shadow:0 0 8px rgba(240,184,47,.75)!important}
+.roster-member.ds-month-member .ds-hof-crown{border-color:#f0b82f!important;background:#1b1203!important;box-shadow:0 0 10px rgba(240,184,47,.55)!important}
 `;document.head.appendChild(s)
 }
 async function apply(){
  addCss();var c=db();if(!c)return;
  var r=await c.from('hall_of_fame').select('member_name,title');
  if(r.error){console.error('Hall roster highlight:',r.error);return}
- var hall={};(r.data||[]).forEach(function(x){if(norm(x.member_name))hall[norm(x.member_name)]=x.title||'HALL OF FAME'});
+ var hall={};
+ (r.data||[]).forEach(function(x){if(norm(x.member_name))hall[norm(x.member_name)]={title:x.title||'HALL OF FAME',label:'🏆 HALL OF FAME',month:false}});
+
+ // The featured DARKSLAYER OF THE MONTH is read directly from the homepage card.
+ // This keeps the roster trophy automatically synced with whoever is selected there.
+ var featured=document.querySelector('.panel.member .member-info h3');
+ var featuredName=norm(featured&&featured.textContent);
+ if(featuredName)hall[featuredName]={title:'DARKSLAYER OF THE MONTH',label:'🏆 MEMBRUL LUNII',month:true};
+
  document.querySelectorAll('.roster-member').forEach(function(card){
-   card.classList.remove('ds-hof-member');
+   card.classList.remove('ds-hof-member','ds-month-member');
    card.querySelectorAll('.ds-hof-badge,.ds-hof-crown').forEach(function(x){x.remove()});
    var h=card.querySelector('.roster-player h3');if(!h)return;
    var clone=h.cloneNode(true);clone.querySelectorAll('small,.ds-hof-badge').forEach(function(x){x.remove()});
-   var name=norm(clone.textContent);if(!hall[name])return;
-   card.classList.add('ds-hof-member');
-   var badge=document.createElement('span');badge.className='ds-hof-badge';badge.title=hall[name];badge.textContent='🏆 HALL OF FAME';h.appendChild(badge);
+   var name=norm(clone.textContent),award=hall[name];if(!award)return;
+   card.classList.add('ds-hof-member');if(award.month)card.classList.add('ds-month-member');
+   var badge=document.createElement('span');badge.className='ds-hof-badge';badge.title=award.title;badge.textContent=award.label;h.appendChild(badge);
    var crown=document.createElement('div');crown.className='ds-hof-crown';crown.textContent='🏆';card.appendChild(crown);
  });
 }
 window.refreshHallRosterHighlight=apply;
 document.addEventListener('darkslayers:members-loaded',function(){setTimeout(apply,400)});
 document.addEventListener('darkslayers:hall-updated',function(){setTimeout(apply,100)});
-setTimeout(apply,900);setTimeout(apply,2200);
+setTimeout(apply,900);setTimeout(apply,2200);setTimeout(apply,4000);
+
+// If the Member of the Month card is refreshed dynamically, refresh the roster trophy too.
+var monthPanel=document.querySelector('.panel.member');
+if(monthPanel){var timer=null;new MutationObserver(function(){clearTimeout(timer);timer=setTimeout(apply,120)}).observe(monthPanel,{childList:true,subtree:true,characterData:true});}
 })();
