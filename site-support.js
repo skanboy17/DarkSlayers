@@ -18,25 +18,31 @@ function install(){
   document.head.appendChild(style);
   const box=document.createElement('div');box.id='ds-site-support';box.setAttribute('role','button');box.setAttribute('tabindex','0');box.innerHTML='<span class="ds-support-heart">❤</span><div class="ds-support-copy"><div class="ds-support-title">SUSTINE SITE-UL DARKSLAYERS</div><div class="ds-support-sub">Ajuta la domeniu si intretinerea site-ului.</div></div><div class="ds-support-paypal"><b>PayPal</b> · Sustine site-ul →</div>';
   const overlay=document.createElement('div');overlay.id='ds-support-overlay';overlay.innerHTML='<div class="ds-support-modal" role="dialog" aria-modal="true" aria-label="Sustine site-ul DARKSLAYERS"><button class="ds-support-close" aria-label="Inchide">×</button><div class="ds-support-icon">❤</div><h2>Sustine site-ul DARKSLAYERS</h2><p>Daca iti place site-ul si vrei sa ajuti la mentinerea si dezvoltarea lui, poti contribui cu orice suma doresti.</p><p>Contributiile sunt folosite pentru <strong>domeniu, servicii si intretinerea site-ului</strong>.</p><p class="ds-support-note">Sustinerea este complet voluntara. Site-ul ramane disponibil tuturor membrilor.</p><a class="ds-support-btn" href="'+PAYPAL+'" target="_blank" rel="noopener noreferrer"><span>PayPal</span> — Sustine site-ul</a><p class="ds-support-thanks">⚔ Multumim ca faci parte din DARKSLAYERS!</p></div>';
-  function findProgressSection(){
-    const nodes=[...document.querySelectorAll('section,aside,article,div')].filter(el=>/PROGRES GUILDA/i.test(el.textContent||'')&&!el.contains(box));
-    if(!nodes.length)return null;
-    return nodes.sort((a,b)=>a.getBoundingClientRect().width-b.getBoundingClientRect().width)[0];
+  function findLatestNews(){
+    const headings=[...document.querySelectorAll('h1,h2,h3,h4')];
+    const heading=headings.find(el=>/ULTIMELE NOUTATI/i.test(el.textContent||''));
+    if(!heading)return null;
+    let section=heading.parentElement;
+    while(section&&section.parentElement&&section.parentElement!==document.body){
+      const r=section.getBoundingClientRect();
+      if(r.width>420&&r.height>300)break;
+      section=section.parentElement;
+    }
+    return section;
   }
-  function findRaidCards(progress){
-    if(!progress)return null;
-    const ids=['foreverRaids','wotlkRaids'];
-    const visible=ids.map(id=>document.getElementById(id)).find(el=>el&&getComputedStyle(el).display!=='none');
-    if(visible&&progress.contains(visible))return visible;
-    return ids.map(id=>document.getElementById(id)).find(el=>el&&progress.contains(el))||null;
+  function findProgressNews(section){
+    if(!section)return null;
+    const candidates=[...section.querySelectorAll('div,article,li')].filter(el=>/PROGRES/i.test(el.textContent||'')&&/Progresam impreuna/i.test(el.textContent||''));
+    if(!candidates.length)return null;
+    return candidates.sort((a,b)=>a.getBoundingClientRect().height-b.getBoundingClientRect().height)[0];
   }
   function place(){
-    const progress=findProgressSection();
-    if(progress){
-      const raids=findRaidCards(progress);
-      if(raids&&raids.parentElement){
-        if(box.parentElement!==raids.parentElement||box.previousSibling!==raids)raids.insertAdjacentElement('afterend',box);
-      }else if(box.parentElement!==progress){progress.appendChild(box)}
+    const latest=findLatestNews();
+    const progressNews=findProgressNews(latest);
+    if(progressNews&&progressNews.parentElement){
+      if(box.parentElement!==progressNews.parentElement||box.previousElementSibling!==progressNews)progressNews.insertAdjacentElement('afterend',box);
+    }else if(latest){
+      if(box.parentElement!==latest)latest.appendChild(box);
     }else if(!box.isConnected){document.body.appendChild(box)}
   }
   function open(){overlay.classList.add('open');document.body.style.overflow='hidden'}function close(){overlay.classList.remove('open');document.body.style.overflow=''}
