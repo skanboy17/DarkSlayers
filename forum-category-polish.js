@@ -22,12 +22,28 @@ function install(){
 }
 function safe(v){return String(v||'').replace(/[<>&"']/g,'');}
 function topicId(row){const m=(row.getAttribute('onclick')||'').match(/openForumTopic\((\d+)\)/);return m?Number(m[1]):0;}
-async function fillStats(row,id){
- const stats=row.querySelectorAll('.ds-cat-stat b'); if(!id||stats.length<2||!window.darkslayersSupabase)return;
- const rr=await darkslayersSupabase.from('forum_replies').select('id',{count:'exact',head:true}).eq('topic_id',id);
- if(!rr.error)stats[0].textContent=String(rr.count||0);
- const vr=await darkslayersSupabase.from('forum_topics').select('views').eq('id',id).maybeSingle();
- if(!vr.error&&vr.data&&vr.data.views!=null)stats[1].textContent=String(Number(vr.data.views)||0);else stats[1].textContent='0';
+async function loadTopicInfo(id){
+ if(!id||!window.darkslayersSupabase)return null;
+ const rr=await darkslayersSupabase.from('forum_replies').select('id,created_at,author_id').eq('topic_id',id).order('created_at',{ascending:false});
+ if(rr.error){console.error('Forum replies stats:',rr.error);return {replies:0,last:null};}
+ const rows=rr.data||[];
+ return {replies:rows.length,last:rows[0]||null};
+}
+async function fillLive(row,id,originalMeta,classPic){
+ const stats=row.querySelectorAll('.ds-cat-stat b');
+ if(!id||stats.length<2)return;
+ const info=await loadTopicInfo(id);if(!info)return;
+ stats[0].textContent=String(info.replies);
+ stats[1].textContent=String(info.replies+1);
+ const last=row.querySelector('.ds-cat-last');if(!last)return;
+ let lastText=originalMeta||'';let avatarSrc=classPic&&classPic.src?classPic.src:'';
+ if(info.last){
+  const pm=await loadForumPublicProfiles([info.last.author_id]);const p=pm.get(info.last.author_id)||{};const c=p.main_character||null;
+  lastText=`de ${p.display_name||'Membru'} • ${(p.role||'member').toUpperCase()}${c?' • '+(c.class||'')+' • '+(c.spec||''):''} • ${forumDate(info.last.created_at)}`;
+  const holder=document.createElement('div');holder.innerHTML=darkslayersAvatarHtml(p,'ds-avatar-small');const img=holder.querySelector('img');if(img&&img.src)avatarSrc=img.src;
+ }
+ const av=last.querySelector('.ds-cat-last-avatar');if(av){av.innerHTML='';if(avatarSrc){const img=document.createElement('img');img.src=avatarSrc;img.alt='';av.appendChild(img)}}
+ const sm=last.querySelector('small');if(sm)sm.textContent=lastText;
 }
 function enhance(){
  install();const box=document.getElementById('forumTopics');if(!box||!box.querySelector('.ds-forum-category-head'))return;
@@ -35,9 +51,9 @@ function enhance(){
   if(row.dataset.dsCategoryPolished==='1')return;const main=row.querySelector('.forum-topic-main'),meta=main&&main.querySelector('small'),arrow=row.querySelector('.forum-topic-arrow');if(!main||!arrow)return;
   const text=(meta?.textContent||'').trim(),classPic=row.querySelector('.ds-inline-forum-class img');
   const stat1=document.createElement('span');stat1.className='ds-cat-stat';stat1.innerHTML='<span>Raspunsuri</span><b>0</b>';stat1.style.gridColumn='4';
-  const stat2=document.createElement('span');stat2.className='ds-cat-stat';stat2.innerHTML='<span>Vizualizari</span><b>0</b>';stat2.style.gridColumn='5';
+  const stat2=document.createElement('span');stat2.className='ds-cat-stat';stat2.innerHTML='<span>Mesaje</span><b>1</b>';stat2.style.gridColumn='5';
   const last=document.createElement('span');last.className='ds-cat-last';last.style.gridColumn='6';const av=document.createElement('span');av.className='ds-cat-last-avatar';if(classPic&&classPic.src){const img=document.createElement('img');img.src=classPic.src;img.alt='';av.appendChild(img)}last.appendChild(av);const info=document.createElement('span');info.innerHTML='<strong>Ultima postare</strong><small>'+safe(text)+'</small>';last.appendChild(info);
-  row.insertBefore(stat1,arrow);row.insertBefore(stat2,arrow);row.insertBefore(last,arrow);arrow.style.display='none';row.dataset.dsCategoryPolished='1';fillStats(row,topicId(row));
+  row.insertBefore(stat1,arrow);row.insertBefore(stat2,arrow);row.insertBefore(last,arrow);arrow.style.display='none';row.dataset.dsCategoryPolished='1';fillLive(row,topicId(row),text,classPic);
  });
 }
 function boot(){install();enhance();const box=document.getElementById('forumTopics');if(box)new MutationObserver(()=>setTimeout(enhance,0)).observe(box,{childList:true,subtree:true});setTimeout(enhance,250);setTimeout(enhance,800)}
