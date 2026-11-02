@@ -6,7 +6,7 @@ function install(){
   if(document.getElementById('ds-site-support'))return;
   const style=document.createElement('style');
   style.textContent=`
-#ds-site-support{position:relative;z-index:5;width:100%;min-height:62px;box-sizing:border-box;margin:18px 0 0;padding:9px 12px;border:1px solid #762027;border-radius:4px;background:linear-gradient(100deg,#120708,#090707 58%,#120708);box-shadow:0 6px 18px rgba(0,0,0,.35);color:#eee;font-family:inherit;cursor:pointer;transition:.22s ease;overflow:hidden;display:flex;align-items:center;gap:11px}
+#ds-site-support{position:relative;z-index:5;width:100%;min-height:62px;box-sizing:border-box;margin:22px 0 0;padding:9px 12px;border:1px solid #762027;border-radius:4px;background:linear-gradient(100deg,#120708,#090707 58%,#120708);box-shadow:0 6px 18px rgba(0,0,0,.35);color:#eee;font-family:inherit;cursor:pointer;transition:.22s ease;overflow:hidden;display:flex;align-items:center;gap:11px}
 #ds-site-support:before{content:'';position:absolute;inset:-80%;background:linear-gradient(110deg,transparent 44%,rgba(255,210,100,.16) 50%,transparent 56%);transform:translateX(-55%);transition:.55s ease;pointer-events:none}
 #ds-site-support:hover{transform:translateY(-2px);border-color:#d9363e;box-shadow:0 0 15px rgba(220,35,43,.38),0 8px 22px rgba(0,0,0,.48)}#ds-site-support:hover:before{transform:translateX(55%)}
 .ds-support-heart{position:relative;z-index:1;flex:0 0 38px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border:1px solid #d42c37;border-radius:50%;background:radial-gradient(circle,#ff3143 0,#bd101f 48%,#39070c 75%);color:#fff;font-size:21px;text-shadow:0 0 7px #fff;box-shadow:0 0 11px rgba(255,35,50,.68),inset 0 0 7px rgba(255,255,255,.2)}#ds-site-support:hover .ds-support-heart{animation:dsHeart .75s ease infinite alternate}@keyframes dsHeart{to{transform:scale(1.08);box-shadow:0 0 18px rgba(255,45,55,.9),inset 0 0 9px rgba(255,255,255,.25)}}
@@ -16,17 +16,28 @@ function install(){
 @media(max-width:700px){#ds-site-support{padding:9px 10px;gap:8px;flex-wrap:wrap}.ds-support-heart{flex-basis:34px;width:34px;height:34px;font-size:19px}.ds-support-title{font-size:12px}.ds-support-sub{font-size:9px}.ds-support-paypal{margin-left:42px;padding:6px 9px}}
 `;
   document.head.appendChild(style);
-  const box=document.createElement('div');box.id='ds-site-support';box.setAttribute('role','button');box.setAttribute('tabindex','0');box.innerHTML='<span class="ds-support-heart">❤</span><div class="ds-support-copy"><div class="ds-support-title">SUSTINE SITE-UL</div><div class="ds-support-sub">Ajuta la domeniu si intretinerea site-ului.</div></div><div class="ds-support-paypal"><b>PayPal</b> →</div>';
+  const box=document.createElement('div');box.id='ds-site-support';box.setAttribute('role','button');box.setAttribute('tabindex','0');box.innerHTML='<span class="ds-support-heart">❤</span><div class="ds-support-copy"><div class="ds-support-title">SUSTINE SITE-UL DARKSLAYERS</div><div class="ds-support-sub">Ajuta la domeniu si intretinerea site-ului.</div></div><div class="ds-support-paypal"><b>PayPal</b> · Sustine site-ul →</div>';
   const overlay=document.createElement('div');overlay.id='ds-support-overlay';overlay.innerHTML='<div class="ds-support-modal" role="dialog" aria-modal="true" aria-label="Sustine site-ul DARKSLAYERS"><button class="ds-support-close" aria-label="Inchide">×</button><div class="ds-support-icon">❤</div><h2>Sustine site-ul DARKSLAYERS</h2><p>Daca iti place site-ul si vrei sa ajuti la mentinerea si dezvoltarea lui, poti contribui cu orice suma doresti.</p><p>Contributiile sunt folosite pentru <strong>domeniu, servicii si intretinerea site-ului</strong>.</p><p class="ds-support-note">Sustinerea este complet voluntara. Site-ul ramane disponibil tuturor membrilor.</p><a class="ds-support-btn" href="'+PAYPAL+'" target="_blank" rel="noopener noreferrer"><span>PayPal</span> — Sustine site-ul</a><p class="ds-support-thanks">⚔ Multumim ca faci parte din DARKSLAYERS!</p></div>';
   function findProgressSection(){
     const nodes=[...document.querySelectorAll('section,aside,article,div')].filter(el=>/PROGRES GUILDA/i.test(el.textContent||'')&&!el.contains(box));
     if(!nodes.length)return null;
     return nodes.sort((a,b)=>a.getBoundingClientRect().width-b.getBoundingClientRect().width)[0];
   }
+  function findRaidCards(progress){
+    if(!progress)return null;
+    const ids=['foreverRaids','wotlkRaids'];
+    const visible=ids.map(id=>document.getElementById(id)).find(el=>el&&getComputedStyle(el).display!=='none');
+    if(visible&&progress.contains(visible))return visible;
+    return ids.map(id=>document.getElementById(id)).find(el=>el&&progress.contains(el))||null;
+  }
   function place(){
     const progress=findProgressSection();
-    if(progress){if(box.parentElement!==progress)progress.appendChild(box)}
-    else if(!box.isConnected){document.body.appendChild(box)}
+    if(progress){
+      const raids=findRaidCards(progress);
+      if(raids&&raids.parentElement){
+        if(box.parentElement!==raids.parentElement||box.previousSibling!==raids)raids.insertAdjacentElement('afterend',box);
+      }else if(box.parentElement!==progress){progress.appendChild(box)}
+    }else if(!box.isConnected){document.body.appendChild(box)}
   }
   function open(){overlay.classList.add('open');document.body.style.overflow='hidden'}function close(){overlay.classList.remove('open');document.body.style.overflow=''}
   box.addEventListener('click',open);box.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});overlay.querySelector('.ds-support-close').addEventListener('click',close);overlay.addEventListener('click',e=>{if(e.target===overlay)close()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('open'))close()});
