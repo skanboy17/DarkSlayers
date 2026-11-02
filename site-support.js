@@ -16,28 +16,36 @@ function install(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 
-/* Staff subpage X returns to staff panel. */
+/* Modal hierarchy: account -> admin/officer -> moderation. */
 (function(){
  if(typeof window.closeSiteModal!=='function')return;
- const originalClose=window.closeSiteModal;let busy=false;
+ const originalClose=window.closeSiteModal;
+ let busy=false;
  window.closeSiteModal=function(){
+  if(busy)return;
   const title=(document.getElementById('siteModalTitle')?.textContent||'').trim().toUpperCase();
-  if(title!=='MODERARE AVATARE'||busy)return originalClose();
-  busy=true;(async()=>{try{const user=await getDarkSlayersUser();const profile=user?await getDarkSlayersProfile(user):null;const role=String(profile?.role||'').toLowerCase();if(role==='admin')await openAdminPanel();else if(role==='officer')await openOfficerPanel();else originalClose()}finally{busy=false}})();
- };
-})();
-
-/* Active session: never paint LOGIN before opening the account/staff panel. */
-(function(){
- if(typeof window.openAccountModal!=='function')return;
- const original=window.openAccountModal;
- function saved(){try{const x=JSON.parse(localStorage.getItem('darkslayers-account-ui')||'null');return x&&x.loggedIn?x:null}catch(e){return null}}
- window.openAccountModal=function(mode='login'){
-  const cached=saved();
-  if(!cached||mode==='register')return original(mode);
-  /* Cached admin can go straight to the verified admin opener. It performs its own auth/role check. */
-  if(cached.admin&&typeof window.openAdminPanel==='function'){window.openAdminPanel();return;}
-  /* For other persisted accounts verify first, without ever rendering the login form. */
-  (async()=>{try{const user=await getDarkSlayersUser();if(!user){original(mode);return}const profile=await getDarkSlayersProfile(user);if(profile?.role==='admin'){await openAdminPanel();return}if(profile?.role==='officer'){await openOfficerPanel();return}original(mode)}catch(e){console.error('Account open:',e);original(mode)}})();
+  if(title==='MODERARE AVATARE'){
+   busy=true;
+   Promise.resolve().then(async()=>{
+    try{
+     const user=await getDarkSlayersUser();
+     const profile=user?await getDarkSlayersProfile(user):null;
+     const role=String(profile?.role||'').toLowerCase();
+     if(role==='admin'&&typeof openAdminPanel==='function')await openAdminPanel();
+     else if(role==='officer'&&typeof openOfficerPanel==='function')await openOfficerPanel();
+     else originalClose();
+    }finally{busy=false}
+   });
+   return;
+  }
+  if(title==='ADMIN PANEL'||title==='OFFICER PANEL'){
+   busy=true;
+   try{
+    if(typeof openAccountModal==='function')openAccountModal('login');
+    else originalClose();
+   }finally{busy=false}
+   return;
+  }
+  originalClose();
  };
 })();
