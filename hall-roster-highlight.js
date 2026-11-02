@@ -1,4 +1,4 @@
-/* DARKSLAYERS - HALL OF FAME + MEMBER OF THE MONTH ROSTER HIGHLIGHT */
+/* DARKSLAYERS - HALL OF FAME + MEMBER OF THE MONTH ROSTER HIGHLIGHT - PERFORMANCE */
 (function(){
 'use strict';
 function db(){try{return typeof darkslayersSupabase!=='undefined'?darkslayersSupabase:null}catch(e){return null}}
@@ -19,42 +19,22 @@ function addCss(){
 .roster-member.ds-month-member .roster-player h3{color:#dffcff!important;text-shadow:0 0 10px rgba(34,211,238,.78)!important}
 `;document.head.appendChild(s)
 }
-function cleanName(h){
- if(!h)return'';
- var clone=h.cloneNode(true);
- clone.querySelectorAll('small,.ds-hof-badge').forEach(function(x){x.remove()});
- return norm(clone.textContent);
+function cleanName(h){if(!h)return'';var clone=h.cloneNode(true);clone.querySelectorAll('small,.ds-hof-badge').forEach(function(x){x.remove()});return norm(clone.textContent)}
+var awardCache=null,awardCacheAt=0,running=false,timer=0;
+async function getAwards(force){
+ if(!force&&awardCache&&Date.now()-awardCacheAt<300000)return awardCache;
+ var c=db(),hall={};
+ if(c){try{var r=await c.from('hall_of_fame').select('member_name,title,created_at').order('created_at',{ascending:false});if(r.error)throw r.error;(r.data||[]).forEach(function(x){var n=norm(x.member_name);if(n&&!hall[n])hall[n]={title:x.title||'HALL OF FAME',label:'🏆 HALL OF FAME',month:false}})}catch(e){console.error('Hall roster highlight:',e)}}
+ hall['ipouncealot']={title:'DARKSLAYER OF THE MONTH',label:'🏆 MEMBRUL LUNII',month:true};awardCache=hall;awardCacheAt=Date.now();return hall
 }
-async function getAwards(){
- var c=db();var hall={};
- if(c){
-  try{
-   var r=await c.from('hall_of_fame').select('member_name,title,created_at').order('created_at',{ascending:false});
-   if(r.error)throw r.error;
-   (r.data||[]).forEach(function(x){var n=norm(x.member_name);if(n&&!hall[n])hall[n]={title:x.title||'HALL OF FAME',label:'🏆 HALL OF FAME',month:false};});
-  }catch(e){console.error('Hall roster highlight:',e)}
- }
- hall['ipouncealot']={title:'DARKSLAYER OF THE MONTH',label:'🏆 MEMBRUL LUNII',month:true};
- return hall;
+async function apply(force){
+ if(running)return;running=true;
+ try{addCss();var hall=await getAwards(force);document.querySelectorAll('.roster-member').forEach(function(card){card.classList.remove('ds-hof-member','ds-month-member');card.querySelectorAll('.ds-hof-badge,.ds-hof-crown').forEach(function(x){x.remove()});var h=card.querySelector('.roster-player h3');if(!h)return;var name=cleanName(h),award=hall[name];if(!award)return;card.classList.add('ds-hof-member');if(award.month)card.classList.add('ds-month-member');var badge=document.createElement('span');badge.className='ds-hof-badge';badge.title=award.title;badge.textContent=award.label;h.appendChild(badge);var crown=document.createElement('div');crown.className='ds-hof-crown';crown.textContent='🏆';card.appendChild(crown)})}finally{running=false}
 }
-async function apply(){
- addCss();
- var hall=await getAwards();
- document.querySelectorAll('.roster-member').forEach(function(card){
-   card.classList.remove('ds-hof-member','ds-month-member');
-   card.querySelectorAll('.ds-hof-badge,.ds-hof-crown').forEach(function(x){x.remove()});
-   var h=card.querySelector('.roster-player h3');if(!h)return;
-   var name=cleanName(h),award=hall[name];if(!award)return;
-   card.classList.add('ds-hof-member');if(award.month)card.classList.add('ds-month-member');
-   var badge=document.createElement('span');badge.className='ds-hof-badge';badge.title=award.title;badge.textContent=award.label;h.appendChild(badge);
-   var crown=document.createElement('div');crown.className='ds-hof-crown';crown.textContent='🏆';card.appendChild(crown);
- });
-}
-window.refreshHallRosterHighlight=apply;
-document.addEventListener('darkslayers:members-loaded',function(){setTimeout(apply,150);setTimeout(apply,700)});
-document.addEventListener('darkslayers:hall-updated',function(){setTimeout(apply,100)});
-setTimeout(apply,500);setTimeout(apply,1200);setTimeout(apply,2500);setTimeout(apply,5000);
-var roster=document.querySelector('.roster-list');
-if(roster){var rt=null;new MutationObserver(function(muts){var external=muts.some(function(m){return Array.from(m.addedNodes||[]).some(function(n){return n.nodeType===1&&!n.classList.contains('ds-hof-badge')&&!n.classList.contains('ds-hof-crown')})});if(external){clearTimeout(rt);rt=setTimeout(apply,100)}}).observe(roster,{childList:true,subtree:true});}
-setInterval(function(){apply()},3000);
+function schedule(force){clearTimeout(timer);timer=setTimeout(function(){apply(force)},120)}
+window.refreshHallRosterHighlight=function(){schedule(false)};
+document.addEventListener('darkslayers:members-loaded',function(){schedule(false)});
+document.addEventListener('darkslayers:hall-updated',function(){awardCache=null;schedule(true)});
+setTimeout(function(){schedule(false)},650);
+var roster=document.querySelector('.roster-list');if(roster){new MutationObserver(function(muts){var external=muts.some(function(m){return Array.from(m.addedNodes||[]).some(function(n){return n.nodeType===1&&!n.classList.contains('ds-hof-badge')&&!n.classList.contains('ds-hof-crown')})});if(external)schedule(false)}).observe(roster,{childList:true});}
 })();
