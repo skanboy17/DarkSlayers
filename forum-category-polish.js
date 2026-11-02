@@ -1,4 +1,4 @@
-/* DARKSLAYERS - forum category page polish */
+/* DARKSLAYERS - forum category page polish PERFORMANCE */
 (function(){
 'use strict';
 function install(){
@@ -22,28 +22,30 @@ function install(){
 }
 function safe(v){return String(v||'').replace(/[<>&"']/g,'');}
 function topicId(row){const m=(row.getAttribute('onclick')||'').match(/openForumTopic\((\d+)\)/);return m?Number(m[1]):0;}
+const LIVE=new Map();
 async function loadTopicInfo(id){
  if(!id||typeof darkslayersSupabase==='undefined'||!darkslayersSupabase)return null;
+ if(LIVE.has(id))return LIVE.get(id);
  const rr=await darkslayersSupabase.from('forum_replies').select('id,created_at,author_id').eq('topic_id',id).order('created_at',{ascending:false});
  if(rr.error){console.error('Forum replies stats:',rr.error);return null;}
- const rows=rr.data||[];
- return {replies:rows.length,last:rows[0]||null};
+ const rows=rr.data||[];const info={replies:rows.length,last:rows[0]||null};LIVE.set(id,info);return info;
 }
 async function fillLive(row,id,originalMeta,classPic){
- const stats=row.querySelectorAll('.ds-cat-stat b');
- if(!id||stats.length<2)return;
- const info=await loadTopicInfo(id);if(!info)return;
- stats[0].textContent=String(info.replies);
- stats[1].textContent=String(info.replies+1);
+ if(row.dataset.dsLiveLoaded==='1')return;row.dataset.dsLiveLoaded='1';
+ const stats=row.querySelectorAll('.ds-cat-stat b');if(!id||stats.length<2)return;
+ const info=await loadTopicInfo(id);if(!info){row.dataset.dsLiveLoaded='';return;}
+ stats[0].textContent=String(info.replies);stats[1].textContent=String(info.replies+1);
  const last=row.querySelector('.ds-cat-last');if(!last)return;
  let lastText=originalMeta||'';let avatarSrc=classPic&&classPic.src?classPic.src:'';
  if(info.last){
   const pm=await loadForumPublicProfiles([info.last.author_id]);const p=pm.get(info.last.author_id)||{};const c=p.main_character||null;
+  last.dataset.userId=info.last.author_id||'';
   lastText=`de ${p.display_name||'Membru'} • ${(p.role||'member').toUpperCase()}${c?' • '+(c.class||'')+' • '+(c.spec||''):''} • ${forumDate(info.last.created_at)}`;
   const holder=document.createElement('div');holder.innerHTML=darkslayersAvatarHtml(p,'ds-avatar-small');const img=holder.querySelector('img');if(img&&img.src)avatarSrc=img.src;
  }
  const av=last.querySelector('.ds-cat-last-avatar');if(av){av.innerHTML='';if(avatarSrc){const img=document.createElement('img');img.src=avatarSrc;img.alt='';av.appendChild(img)}}
  const sm=last.querySelector('small');if(sm)sm.textContent=lastText;
+ if(typeof window.refreshForumRewards==='function')window.refreshForumRewards();
 }
 function enhance(){
  install();const box=document.getElementById('forumTopics');if(!box||!box.querySelector('.ds-forum-category-head'))return;
@@ -57,6 +59,7 @@ function enhance(){
   arrow.style.display='none';row.dataset.dsCategoryPolished='1';fillLive(row,topicId(row),text,classPic);
  });
 }
-function boot(){install();enhance();const box=document.getElementById('forumTopics');if(box)new MutationObserver(()=>setTimeout(enhance,0)).observe(box,{childList:true,subtree:true});setTimeout(enhance,250);setTimeout(enhance,800);setTimeout(enhance,1600)}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();window.refreshForumCategoryPolish=enhance;
+let et=0;function schedule(){clearTimeout(et);et=setTimeout(enhance,60)}
+function boot(){install();enhance();const box=document.getElementById('forumTopics');if(box)new MutationObserver(schedule).observe(box,{childList:true});setTimeout(enhance,300)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();window.refreshForumCategoryPolish=enhance;
 })();
