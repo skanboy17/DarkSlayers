@@ -10,3 +10,32 @@ function start(){var tries=0,t=setInterval(function(){tries++;if(ensure()){refre
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 document.addEventListener('click',function(e){if(e.target&&e.target.closest&&e.target.closest('[data-buy]'))setTimeout(refresh,900)});
 })();
+
+/* DARKSLAYERS - DIRECT STAFF PANEL / NO LOGIN FLASH */
+(function(){
+'use strict';
+function cachedRole(){
+  try{
+    var ui=JSON.parse(localStorage.getItem('darkslayers-account-ui')||'null');
+    if(!ui||!ui.loggedIn)return '';
+    if(ui.admin)return 'admin';
+  }catch(e){}
+  try{
+    if(typeof DARKSLAYERS_CURRENT_PROFILE!=='undefined'&&DARKSLAYERS_CURRENT_PROFILE)return String(DARKSLAYERS_CURRENT_PROFILE.role||'').toLowerCase();
+  }catch(e){}
+  return '';
+}
+function install(){
+  var b=document.getElementById('accountButton');
+  if(!b||b.dataset.dsStaffDirect==='1')return;
+  b.dataset.dsStaffDirect='1';
+  b.addEventListener('click',function(e){
+    var role=cachedRole();
+    if(role!=='admin'&&role!=='officer')return;
+    e.preventDefault();e.stopImmediatePropagation();
+    if(role==='admin'&&typeof openAdminPanel==='function'){openAdminPanel();return;}
+    if(role==='officer'&&typeof openOfficerPanel==='function'){openOfficerPanel();}
+  },true);
+}
+install();
+})();
