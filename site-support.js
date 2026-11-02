@@ -24,3 +24,28 @@ function install(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
+
+/* DARKSLAYERS - nested staff modal back navigation */
+(function(){
+  if(typeof window.closeSiteModal!=='function')return;
+  const originalClose=window.closeSiteModal;
+  let busy=false;
+  window.closeSiteModal=function(){
+    const title=(document.getElementById('siteModalTitle')?.textContent||'').trim().toUpperCase();
+    if(title!=='MODERARE AVATARE'||busy)return originalClose();
+    busy=true;
+    (async function(){
+      try{
+        let role='';
+        if(typeof getDarkSlayersUser==='function'&&typeof getDarkSlayersProfile==='function'){
+          const user=await getDarkSlayersUser();
+          const profile=user?await getDarkSlayersProfile(user):null;
+          role=String(profile?.role||'').toLowerCase();
+        }
+        if(role==='admin'&&typeof openAdminPanel==='function')await openAdminPanel();
+        else if(role==='officer'&&typeof openOfficerPanel==='function')await openOfficerPanel();
+        else originalClose();
+      }finally{busy=false}
+    })();
+  };
+})();
