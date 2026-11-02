@@ -22,6 +22,22 @@
     temp.querySelectorAll('script').forEach(s=>s.remove());
     app.replaceWith(...Array.from(temp.childNodes));
     function load(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.body.appendChild(s);});}
+    function paintCachedAccount(){
+      const button=document.getElementById('accountButton');
+      if(!button)return false;
+      try{
+        const raw=localStorage.getItem('darkslayers-account-ui');
+        if(!raw)return false;
+        const saved=JSON.parse(raw);
+        if(!saved||!saved.loggedIn||!saved.label)return false;
+        button.textContent=saved.label;
+        button.classList.add('logged-in');
+        button.classList.toggle('admin-account',!!saved.admin);
+        button.style.visibility='visible';
+        return true;
+      }catch(e){return false}
+    }
+    paintCachedAccount();
     await load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
     if(window.supabase&&typeof window.supabase.createClient==='function'){
       const originalCreateClient=window.supabase.createClient.bind(window.supabase);
@@ -71,7 +87,13 @@
     window.refreshForumClassIcons=addForumClassIcons;
     const forumRoot=document.getElementById('forumTopics');if(forumRoot)new MutationObserver(()=>setTimeout(addForumClassIcons,0)).observe(forumRoot,{childList:true,subtree:true});
     if(typeof loadForumTopics==='function'){setTimeout(async function(){await loadForumTopics(1);addForumClassIcons();},100);setTimeout(addForumClassIcons,500);setTimeout(addForumClassIcons,1200);}
-    if(typeof darkslayersSupabase!=='undefined'&&darkslayersSupabase&&darkslayersSupabase.auth){try{await darkslayersSupabase.auth.getSession();}catch(e){console.error('Session restore:',e);}if(typeof updateAccountButton==='function')await updateAccountButton();const accountButton=document.getElementById('accountButton');if(accountButton)accountButton.style.visibility='visible';if(typeof loadDarkSlayersRaidProgress==='function'){setTimeout(loadDarkSlayersRaidProgress,150);setTimeout(loadDarkSlayersRaidProgress,900);}darkslayersSupabase.auth.onAuthStateChange(function(){setTimeout(function(){if(typeof updateAccountButton==='function')updateAccountButton();if(typeof refreshAuthModal==='function'&&document.getElementById('loggedInPanel'))refreshAuthModal();if(typeof loadDarkSlayersRaidProgress==='function')loadDarkSlayersRaidProgress();if(typeof window.refreshHallOfFame==='function')window.refreshHallOfFame();if(typeof window.refreshHallRosterHighlight==='function')window.refreshHallRosterHighlight();if(typeof window.refreshFeaturedHallMember==='function')window.refreshFeaturedHallMember();if(typeof window.refreshGalleryV2==='function')window.refreshGalleryV2();if(typeof window.refreshRecruitmentV2==='function')window.refreshRecruitmentV2();if(typeof window.refreshGuildBoss==='function')window.refreshGuildBoss();if(typeof window.refreshGuildBossEnhance==='function')window.refreshGuildBossEnhance();if(typeof window.refreshRewardShop==='function')window.refreshRewardShop();if(typeof window.refreshRewardTextStyles==='function')window.refreshRewardTextStyles();if(typeof window.refreshRewardEquip==='function')window.refreshRewardEquip();if(typeof window.refreshPublicProfileRewards==='function')window.refreshPublicProfileRewards();if(typeof window.refreshForumTextStyles==='function')window.refreshForumTextStyles();if(typeof window.refreshForumRewards==='function')window.refreshForumRewards();if(typeof window.refreshRosterRewards==='function')window.refreshRosterRewards();if(typeof window.refreshRewardAuraLive==='function')window.refreshRewardAuraLive();if(typeof window.refreshRewardWallet==='function')window.refreshRewardWallet();},150);});}else{const accountButton=document.getElementById('accountButton');if(accountButton)accountButton.style.visibility='visible';}
+    if(typeof darkslayersSupabase!=='undefined'&&darkslayersSupabase&&darkslayersSupabase.auth){
+      try{await darkslayersSupabase.auth.getSession();}catch(e){console.error('Session restore:',e);}
+      if(typeof updateAccountButton==='function')await updateAccountButton();
+      const accountButton=document.getElementById('accountButton');if(accountButton){accountButton.style.visibility='visible';try{const logged=accountButton.classList.contains('logged-in');localStorage.setItem('darkslayers-account-ui',JSON.stringify({loggedIn:logged,label:accountButton.textContent||'CONT',admin:accountButton.classList.contains('admin-account')}));}catch(e){}}
+      if(typeof loadDarkSlayersRaidProgress==='function'){setTimeout(loadDarkSlayersRaidProgress,150);setTimeout(loadDarkSlayersRaidProgress,900);}
+      darkslayersSupabase.auth.onAuthStateChange(function(event,session){setTimeout(async function(){if(typeof updateAccountButton==='function')await updateAccountButton();const b=document.getElementById('accountButton');if(b){b.style.visibility='visible';try{if(session){localStorage.setItem('darkslayers-account-ui',JSON.stringify({loggedIn:true,label:b.textContent||'CONTUL MEU',admin:b.classList.contains('admin-account')}));}else{localStorage.removeItem('darkslayers-account-ui');}}catch(e){}}if(typeof refreshAuthModal==='function'&&document.getElementById('loggedInPanel'))refreshAuthModal();if(typeof loadDarkSlayersRaidProgress==='function')loadDarkSlayersRaidProgress();if(typeof window.refreshHallOfFame==='function')window.refreshHallOfFame();if(typeof window.refreshHallRosterHighlight==='function')window.refreshHallRosterHighlight();if(typeof window.refreshFeaturedHallMember==='function')window.refreshFeaturedHallMember();if(typeof window.refreshGalleryV2==='function')window.refreshGalleryV2();if(typeof window.refreshRecruitmentV2==='function')window.refreshRecruitmentV2();if(typeof window.refreshGuildBoss==='function')window.refreshGuildBoss();if(typeof window.refreshGuildBossEnhance==='function')window.refreshGuildBossEnhance();if(typeof window.refreshRewardShop==='function')window.refreshRewardShop();if(typeof window.refreshRewardTextStyles==='function')window.refreshRewardTextStyles();if(typeof window.refreshRewardEquip==='function')window.refreshRewardEquip();if(typeof window.refreshPublicProfileRewards==='function')window.refreshPublicProfileRewards();if(typeof window.refreshForumTextStyles==='function')window.refreshForumTextStyles();if(typeof window.refreshForumRewards==='function')window.refreshForumRewards();if(typeof window.refreshRosterRewards==='function')window.refreshRosterRewards();if(typeof window.refreshRewardAuraLive==='function')window.refreshRewardAuraLive();if(typeof window.refreshRewardWallet==='function')window.refreshRewardWallet();},0);});
+    }else{const accountButton=document.getElementById('accountButton');if(accountButton)accountButton.style.visibility='visible';}
   }catch(e){console.error(e);const accountButton=document.getElementById('accountButton');if(accountButton)accountButton.style.visibility='visible';document.body.innerHTML='<div style="padding:40px;color:white;background:#050505;min-height:100vh;font-family:Arial"><h1 style="color:#d9272e">DARKSLAYERS</h1><p>Eroare la incarcarea site-ului.</p></div>';}
 })();
 </script>
