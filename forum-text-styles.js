@@ -1,35 +1,10 @@
 /* DARKSLAYERS - FORUM TEXT STYLES */
 (function(){
 'use strict';
-const allowed={
-  'blood-text':'ds-forum-text-blood',
-  'shadow-text':'ds-forum-text-shadow',
-  'frost-text':'ds-forum-text-frost',
-  'legendary-text':'ds-forum-text-legendary'
-};
+const allowed={'blood-text':'ds-forum-text-blood','shadow-text':'ds-forum-text-shadow','frost-text':'ds-forum-text-frost','legendary-text':'ds-forum-text-legendary'};
 let installed=false;
-function css(){if(document.getElementById('ds-forum-text-css'))return;const s=document.createElement('style');s.id='ds-forum-text-css';s.textContent=`
-.forum-original>p.ds-forum-styled-text,.forum-reply>p.ds-forum-styled-text{font-weight:600!important}.ds-forum-text-blood{color:#ff5a5a!important;text-shadow:0 0 6px rgba(255,48,48,.48)!important}.ds-forum-text-shadow{color:#c586ff!important;text-shadow:0 0 7px rgba(158,70,255,.55)!important}.ds-forum-text-frost{color:#78e6ff!important;text-shadow:0 0 7px rgba(66,206,255,.5)!important}.ds-forum-text-legendary{color:#ffe477!important;text-shadow:0 0 7px rgba(255,194,35,.58)!important}
-`;document.head.appendChild(s)}
+function css(){if(document.getElementById('ds-forum-text-css'))return;const s=document.createElement('style');s.id='ds-forum-text-css';s.textContent=`.forum-original>p.ds-forum-styled-text,.forum-reply>p.ds-forum-styled-text{font-weight:600!important}.ds-forum-text-blood{color:#ff5a5a!important;text-shadow:0 0 6px rgba(255,48,48,.48)!important}.ds-forum-text-shadow{color:#c586ff!important;text-shadow:0 0 7px rgba(158,70,255,.55)!important}.ds-forum-text-frost{color:#78e6ff!important;text-shadow:0 0 7px rgba(66,206,255,.5)!important}.ds-forum-text-legendary{color:#ffe477!important;text-shadow:0 0 7px rgba(255,194,35,.58)!important}`;document.head.appendChild(s)}
 function decorate(root){(root||document).querySelectorAll('.forum-original,.forum-reply').forEach(post=>{const author=post.querySelector('.ds-forum-author[data-text-style]');const p=post.querySelector(':scope > p');if(!p)return;p.classList.remove('ds-forum-styled-text',...Object.values(allowed));const slug=author&&author.dataset.textStyle;if(slug&&allowed[slug])p.classList.add('ds-forum-styled-text',allowed[slug])})}
-async function install(){if(installed)return;installed=true;css();
-  const originalProfiles=window.loadForumPublicProfiles;
-  if(typeof originalProfiles==='function')window.loadForumPublicProfiles=async function(userIds){
-    const map=await originalProfiles.apply(this,arguments);if(!userIds||!userIds.length||!window.darkslayersSupabase)return map;
-    try{
-      const eq=await darkslayersSupabase.from('user_equipped_rewards').select('user_id,text_item_id').in('user_id',userIds);
-      const ids=[...new Set((eq.data||[]).map(x=>x.text_item_id).filter(Boolean))];
-      let slugs=new Map();
-      if(ids.length){const shop=await darkslayersSupabase.from('reward_shop_items').select('id,slug,category').in('id',ids).eq('category','text');slugs=new Map((shop.data||[]).filter(x=>allowed[x.slug]).map(x=>[String(x.id),x.slug]))}
-      (eq.data||[]).forEach(x=>{const p=map.get(x.user_id),slug=slugs.get(String(x.text_item_id));if(p&&slug)p.text_style_slug=slug});
-    }catch(e){console.error('[ForumTextStyles]',e)}return map;
-  };
-  const originalAuthor=window.forumAuthorHtml;
-  if(typeof originalAuthor==='function')window.forumAuthorHtml=function(profile){const html=originalAuthor.apply(this,arguments);const slug=profile&&allowed[profile.text_style_slug]?profile.text_style_slug:'';return slug?html.replace('class="ds-forum-author"','class="ds-forum-author" data-text-style="'+slug+'"'):html};
-  const originalOpen=window.openForumTopic;
-  if(typeof originalOpen==='function')window.openForumTopic=async function(){const r=await originalOpen.apply(this,arguments);decorate(document);return r};
-  new MutationObserver(()=>decorate(document)).observe(document.body,{childList:true,subtree:true});
-}
-window.refreshForumTextStyles=function(){decorate(document)};
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+async function install(){if(installed)return;installed=true;css();const originalProfiles=window.loadForumPublicProfiles;if(typeof originalProfiles==='function')window.loadForumPublicProfiles=async function(userIds){const map=await originalProfiles.apply(this,arguments);if(!userIds||!userIds.length||typeof darkslayersSupabase==='undefined'||!darkslayersSupabase)return map;try{const eq=await darkslayersSupabase.from('user_equipped_rewards').select('user_id,text_item_id').in('user_id',userIds);const ids=[...new Set((eq.data||[]).map(x=>x.text_item_id).filter(Boolean))];let slugs=new Map();if(ids.length){const shop=await darkslayersSupabase.from('reward_shop_items').select('id,slug,category').in('id',ids).eq('category','text');slugs=new Map((shop.data||[]).filter(x=>allowed[x.slug]).map(x=>[String(x.id),x.slug]))}(eq.data||[]).forEach(x=>{const p=map.get(x.user_id),slug=slugs.get(String(x.text_item_id));if(p&&slug)p.text_style_slug=slug})}catch(e){console.error('[ForumTextStyles]',e)}return map};const originalAuthor=window.forumAuthorHtml;if(typeof originalAuthor==='function')window.forumAuthorHtml=function(profile){const html=originalAuthor.apply(this,arguments);const slug=profile&&allowed[profile.text_style_slug]?profile.text_style_slug:'';return slug?html.replace('class="ds-forum-author"','class="ds-forum-author" data-text-style="'+slug+'"'):html};const originalOpen=window.openForumTopic;if(typeof originalOpen==='function')window.openForumTopic=async function(){const r=await originalOpen.apply(this,arguments);decorate(document);return r};new MutationObserver(()=>decorate(document)).observe(document.body,{childList:true,subtree:true})}
+window.refreshForumTextStyles=function(){decorate(document)};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
