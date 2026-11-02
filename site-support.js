@@ -6,7 +6,7 @@ function install(){
   if(document.getElementById('ds-site-support'))return;
   const style=document.createElement('style');
   style.textContent=`
-#ds-site-support{position:relative;z-index:5;width:100%;min-height:68px;box-sizing:border-box;margin:0 0 16px;padding:10px 12px;border:1px solid #762027;border-radius:4px;background:linear-gradient(100deg,#120708,#090707 58%,#120708);box-shadow:0 6px 18px rgba(0,0,0,.35);color:#eee;font-family:inherit;cursor:pointer;transition:.22s ease;overflow:hidden;display:flex;align-items:center;gap:11px}
+#ds-site-support{position:relative;z-index:5;width:100%;min-height:62px;box-sizing:border-box;margin:0 0 16px;padding:9px 12px;border:1px solid #762027;border-radius:4px;background:linear-gradient(100deg,#120708,#090707 58%,#120708);box-shadow:0 6px 18px rgba(0,0,0,.35);color:#eee;font-family:inherit;cursor:pointer;transition:.22s ease;overflow:hidden;display:flex;align-items:center;gap:11px}
 #ds-site-support:before{content:'';position:absolute;inset:-80%;background:linear-gradient(110deg,transparent 44%,rgba(255,210,100,.16) 50%,transparent 56%);transform:translateX(-55%);transition:.55s ease;pointer-events:none}
 #ds-site-support:hover{transform:translateY(-2px);border-color:#d9363e;box-shadow:0 0 15px rgba(220,35,43,.38),0 8px 22px rgba(0,0,0,.48)}#ds-site-support:hover:before{transform:translateX(55%)}
 .ds-support-heart{position:relative;z-index:1;flex:0 0 38px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border:1px solid #d42c37;border-radius:50%;background:radial-gradient(circle,#ff3143 0,#bd101f 48%,#39070c 75%);color:#fff;font-size:21px;text-shadow:0 0 7px #fff;box-shadow:0 0 11px rgba(255,35,50,.68),inset 0 0 7px rgba(255,255,255,.2)}#ds-site-support:hover .ds-support-heart{animation:dsHeart .75s ease infinite alternate}@keyframes dsHeart{to{transform:scale(1.08);box-shadow:0 0 18px rgba(255,45,55,.9),inset 0 0 9px rgba(255,255,255,.25)}}
@@ -18,8 +18,25 @@ function install(){
   document.head.appendChild(style);
   const box=document.createElement('div');box.id='ds-site-support';box.setAttribute('role','button');box.setAttribute('tabindex','0');box.innerHTML='<span class="ds-support-heart">❤</span><div class="ds-support-copy"><div class="ds-support-title">SUSTINE SITE-UL</div><div class="ds-support-sub">Ajuta la domeniu si intretinerea site-ului.</div></div><div class="ds-support-paypal"><b>PayPal</b> →</div>';
   const overlay=document.createElement('div');overlay.id='ds-support-overlay';overlay.innerHTML='<div class="ds-support-modal" role="dialog" aria-modal="true" aria-label="Sustine site-ul DARKSLAYERS"><button class="ds-support-close" aria-label="Inchide">×</button><div class="ds-support-icon">❤</div><h2>Sustine site-ul DARKSLAYERS</h2><p>Daca iti place site-ul si vrei sa ajuti la mentinerea si dezvoltarea lui, poti contribui cu orice suma doresti.</p><p>Contributiile sunt folosite pentru <strong>domeniu, servicii si intretinerea site-ului</strong>.</p><p class="ds-support-note">Sustinerea este complet voluntara. Site-ul ramane disponibil tuturor membrilor.</p><a class="ds-support-btn" href="'+PAYPAL+'" target="_blank" rel="noopener noreferrer"><span>PayPal</span> — Sustine site-ul</a><p class="ds-support-thanks">⚔ Multumim ca faci parte din DARKSLAYERS!</p></div>';
-  function findMonthCard(){const all=[...document.querySelectorAll('section,aside,article,div')];return all.filter(el=>/DARKSLAYER OF THE MONTH/i.test(el.textContent||'')).sort((a,b)=>a.getBoundingClientRect().width-b.getBoundingClientRect().width)[0]||null}
-  function place(){if(box.isConnected)return;const month=findMonthCard();if(month&&month.parentElement){month.parentElement.insertBefore(box,month)}else{document.body.appendChild(box)}}
+  function findMonthSection(){
+    const nodes=[...document.querySelectorAll('section,aside,article,div')].filter(el=>/DARKSLAYER OF THE MONTH/i.test(el.textContent||''));
+    if(!nodes.length)return null;
+    const leaf=nodes.sort((a,b)=>a.getBoundingClientRect().width-b.getBoundingClientRect().width)[0];
+    let section=leaf;
+    while(section.parentElement&&section.parentElement!==document.body){
+      const parent=section.parentElement;
+      const r=parent.getBoundingClientRect(),sr=section.getBoundingClientRect();
+      if(r.width>sr.width*1.55)break;
+      section=parent;
+    }
+    return section;
+  }
+  function place(){
+    const section=findMonthSection();
+    if(section&&section.parentElement){
+      if(box.parentElement!==section.parentElement||box.nextSibling!==section)section.parentElement.insertBefore(box,section);
+    }else if(!box.isConnected){document.body.appendChild(box)}
+  }
   function open(){overlay.classList.add('open');document.body.style.overflow='hidden'}function close(){overlay.classList.remove('open');document.body.style.overflow=''}
   box.addEventListener('click',open);box.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});overlay.querySelector('.ds-support-close').addEventListener('click',close);overlay.addEventListener('click',e=>{if(e.target===overlay)close()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('open'))close()});
   document.body.appendChild(overlay);place();setTimeout(place,250);setTimeout(place,900);
