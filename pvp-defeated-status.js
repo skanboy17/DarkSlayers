@@ -1,47 +1,10 @@
 (function(){'use strict';
-if(window.__dsPvpDefeatedStatusV5)return;window.__dsPvpDefeatedStatusV5=true;
-let busy=false,dead=new Map(),lastSync=0;
-function uidOf(btn){return String(btn?.dataset?.pvpTarget||btn?.dataset?.pvpDefeatedTarget||'')}
-function paint(){
- const arena=document.querySelector('#dsGameView .ds-pvp-list');if(!arena)return;
- arena.querySelectorAll('.ds-pvp-attack').forEach(btn=>{
-  const uid=uidOf(btn);if(!uid)return;
-  const row=dead.get(uid),sec=row?Math.max(0,Math.ceil((row.endsAt-Date.now())/1000)):0;
-  if(sec>0){
-   btn.dataset.pvpDefeatedTarget=uid;delete btn.dataset.pvpTarget;btn.disabled=true;
-   btn.textContent='DEFEATED';btn.title='Opponent is defeated';
-   btn.closest('.ds-pvp-player')?.classList.add('locked');
-  }else if(btn.dataset.pvpDefeatedTarget){
-   btn.dataset.pvpTarget=uid;delete btn.dataset.pvpDefeatedTarget;btn.disabled=false;btn.textContent='ATTACK';btn.title='';
-   btn.closest('.ds-pvp-player')?.classList.remove('locked');dead.delete(uid);
-  }
- });
-}
-async function sync(force){
- if(busy||typeof darkslayersSupabase==='undefined')return false;
- if(!force&&Date.now()-lastSync<1000){paint();return true}
- busy=true;
- try{
-  const {data,error}=await darkslayersSupabase.rpc('ds_pvp_defeated_status_v2');
-  if(error){console.error('PvP defeated status:',error);return false}
-  const now=Date.now(),next=new Map();
-  (data||[]).forEach(x=>{let sec=Math.max(0,Number(x.seconds_left)||0);if(sec>0)next.set(String(x.user_id),{endsAt:now+sec*1000})});
-  dead=next;lastSync=now;paint();return true;
- }finally{busy=false}
-}
-document.addEventListener('click',async function(e){
- const btn=e.target.closest?.('.ds-pvp-attack[data-pvp-target]');if(!btn||btn.dataset.pvpChecked==='1')return;
- e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
- const uid=uidOf(btn);btn.disabled=true;const old=btn.textContent;btn.textContent='CHECKING...';
- await sync(true);paint();
- const row=dead.get(uid),sec=row?Math.max(0,Math.ceil((row.endsAt-Date.now())/1000)):0;
- if(sec>0){paint();return}
- btn.disabled=false;btn.textContent=old==='FIGHTING...'?'ATTACK':old;
- btn.dataset.pvpChecked='1';
- try{btn.click()}finally{delete btn.dataset.pvpChecked}
-},true);
-setInterval(()=>{paint();if(document.querySelector('#dsGameView .ds-pvp-list')&&Date.now()-lastSync>5000)sync(true)},500);
-document.addEventListener('click',e=>{if(e.target.closest?.('[data-game-tab="pvp"],.ds-pvp-back'))setTimeout(()=>sync(true),50)},true);
-new MutationObserver(()=>{if(document.querySelector('#dsGameView .ds-pvp-list'))setTimeout(()=>sync(true),20)}).observe(document.documentElement,{childList:true,subtree:true});
-setTimeout(()=>sync(true),50);window.refreshPvpDefeatedStatus=()=>sync(true);
+if(window.__dsPvpDefeatedStatusV6)return;window.__dsPvpDefeatedStatusV6=true;
+let busy=false,dead=new Set(),last=0;
+function uid(btn){return String(btn?.dataset?.pvpTarget||btn?.dataset?.pvpDefeatedTarget||'')}
+function paint(){const list=document.querySelector('#dsGameView .ds-pvp-list');if(!list)return;list.querySelectorAll('.ds-pvp-attack').forEach(btn=>{let id=uid(btn);if(!id)return;if(dead.has(id)){btn.dataset.pvpDefeatedTarget=id;delete btn.dataset.pvpTarget;btn.disabled=true;if(btn.textContent!=='DEFEATED')btn.textContent='DEFEATED';btn.title='Opponent is defeated';btn.closest('.ds-pvp-player')?.classList.add('locked')}else if(btn.dataset.pvpDefeatedTarget){btn.dataset.pvpTarget=id;delete btn.dataset.pvpDefeatedTarget;btn.disabled=false;btn.textContent='ATTACK';btn.title='';btn.closest('.ds-pvp-player')?.classList.remove('locked')}})}
+async function sync(force){if(busy||typeof darkslayersSupabase==='undefined'||!document.querySelector('#dsGameView .ds-pvp-list'))return false;if(!force&&Date.now()-last<8000){paint();return true}busy=true;try{const {data,error}=await darkslayersSupabase.rpc('ds_pvp_defeated_status_v2');if(error){console.error('PvP defeated status:',error);return false}dead=new Set((data||[]).filter(x=>Number(x.seconds_left)>0).map(x=>String(x.user_id)));last=Date.now();paint();return true}finally{busy=false}}
+document.addEventListener('click',async e=>{const btn=e.target.closest?.('.ds-pvp-attack[data-pvp-target]');if(!btn||btn.dataset.pvpChecked==='1')return;e.preventDefault();e.stopImmediatePropagation();let id=uid(btn);btn.disabled=true;btn.textContent='CHECKING...';await sync(true);if(dead.has(id)){paint();return}btn.disabled=false;btn.textContent='ATTACK';btn.dataset.pvpChecked='1';try{btn.click()}finally{delete btn.dataset.pvpChecked}},true);
+document.addEventListener('click',e=>{if(e.target.closest?.('[data-game-tab="pvp"],.ds-pvp-back'))setTimeout(()=>sync(true),100)},true);
+setInterval(()=>sync(false),8000);window.refreshPvpDefeatedStatus=()=>sync(true);
 })();
