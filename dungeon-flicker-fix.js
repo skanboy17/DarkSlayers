@@ -1,0 +1,7 @@
+(function(){'use strict';
+if(window.__dsDungeonFlickerFix)return;window.__dsDungeonFlickerFix=true;
+let style=document.createElement('style');style.id='ds-dungeon-flicker-css';style.textContent=`#dsGameView{background:#050505;isolation:isolate}#dsGameView.ds-combat-stable,#dsGameView.ds-combat-stable *{animation:none!important}#dsGameView.ds-combat-stable{opacity:1!important;visibility:visible!important;transition:none!important}#dsGameView.ds-combat-stable .ds-dungeon{opacity:1!important;visibility:visible!important;transition:none!important;transform:none!important}#dsGameView.ds-combat-stable .ds-dungeon-scene{opacity:1!important;visibility:visible!important;transition:none!important;transform:none!important}`;document.head.appendChild(style);
+let timer=0;
+function stabilize(e){let b=e.target.closest('#dsGameView [data-act]');if(!b)return;let a=b.dataset.act;if(!['advance','resolve','chest','boss'].includes(a))return;let v=document.getElementById('dsGameView');if(!v)return;let h=v.getBoundingClientRect().height;if(h>0)v.style.minHeight=Math.ceil(h)+'px';v.classList.add('ds-combat-stable');clearTimeout(timer);timer=setTimeout(()=>{v.classList.remove('ds-combat-stable');v.style.minHeight=''},900)}
+document.addEventListener('pointerdown',stabilize,true);
+})();
