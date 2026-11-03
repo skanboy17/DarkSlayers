@@ -1,0 +1,6 @@
+(function(){'use strict';
+let busy=false,timer=null;
+async function checkDeath(){if(busy||typeof darkslayersSupabase==='undefined')return;busy=true;try{let a=await darkslayersSupabase.auth.getUser(),u=a.data&&a.data.user;if(!u)return;let q=await darkslayersSupabase.from('game_dungeon_runs').select('id,status,hp,lives').eq('user_id',u.id).eq('status','active').order('updated_at',{ascending:false}).limit(1).maybeSingle();let r=q.data;if(!r||Number(r.hp)>1)return;let d=await darkslayersSupabase.rpc('ds_dungeon_register_death');if(d.error){console.error('Dungeon death watch:',d.error);return}if(typeof window.openCharacterDungeon==='function'&&window.currentCharacterGame)await window.openCharacterDungeon(window.currentCharacterGame)}finally{busy=false}}
+function schedule(){clearTimeout(timer);timer=setTimeout(checkDeath,700)}
+document.addEventListener('click',function(e){let b=e.target.closest('#dsGameView [data-act]');if(!b)return;let a=b.dataset.act;if(a==='resolve'||a==='boss'||a==='advance')schedule()},false);
+})();
