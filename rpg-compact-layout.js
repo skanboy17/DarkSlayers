@@ -10,12 +10,13 @@
 .ds-dungeon-card .ds-dungeon-btn{padding:8px 11px!important;font-size:8px!important;white-space:nowrap!important}
 .ds-dungeon-lock{padding:7px 9px!important;font-size:8px!important;white-space:nowrap!important}
 .ds-dungeon-select-head{padding:8px 5px 3px!important}.ds-dungeon-select-head h2{font-size:21px!important}.ds-dungeon-hp{margin:8px auto 2px!important}
-/* Inventory: smaller, denser item cards */
+/* Inventory: smaller, denser item cards + fixed item area so page below never jumps */
 .ds-items,.ds-inventory-items,.ds-inventory-grid{gap:7px!important}
+.ds-items{height:330px!important;min-height:330px!important;max-height:330px!important;align-content:start!important}
 .ds-item{min-height:0!important;padding:8px!important}
 .ds-item h4{font-size:13px!important;line-height:1.05!important;margin:0 0 4px!important}
 .ds-item p,.ds-item-meta,.ds-item-stats{font-size:8px!important;line-height:1.25!important;margin:2px 0!important}
 .ds-item img,.ds-item-icon{width:58px!important;height:58px!important;min-width:58px!important}
 .ds-item button,.ds-equip-btn,.ds-unequip-btn{padding:6px 9px!important;font-size:8px!important}
-@media(max-width:700px){.ds-dungeon-card,.ds-dungeon-card:first-child{grid-template-columns:28px minmax(0,1fr)!important}.ds-dungeon-card-bottom{grid-column:2!important;grid-row:3!important;justify-self:start!important;margin-top:5px!important}.ds-dungeon-card-icon{grid-row:1/4!important}}
+@media(max-width:700px){.ds-dungeon-card,.ds-dungeon-card:first-child{grid-template-columns:28px minmax(0,1fr)!important}.ds-dungeon-card-bottom{grid-column:2!important;grid-row:3!important;justify-self:start!important;margin-top:5px!important}.ds-dungeon-card-icon{grid-row:1/4!important}.ds-items{height:330px!important;min-height:330px!important}}
 `;document.head.appendChild(s)})();
