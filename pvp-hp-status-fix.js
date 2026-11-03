@@ -1,0 +1,5 @@
+(function(){'use strict';
+async function status(){try{if(!window.darkslayersSupabase)return null;let {data,error}=await darkslayersSupabase.rpc('ds_pvp_status');if(error){console.error('PvP status:',error);return null}return data}catch(e){console.error(e);return null}}
+async function sync(){let root=document.querySelector('#dsGameView .ds-pvp');if(!root)return;let box=root.querySelector('.ds-pvp-kit');if(!box)return;let s=await status();if(!s)return;let hp=Math.max(0,Number(s.current_hp)||0),max=Math.max(1,Number(s.max_hp)||100),pct=Math.max(0,Math.min(100,hp/max*100));let bar=box.querySelector('.ds-pvp-selfhp .ds-pvp-hp i'),txt=box.querySelector('.ds-pvp-selfhp .ds-pvp-hptxt');if(bar)bar.style.width=pct+'%';if(txt)txt.textContent=hp+' / '+max+' HP';}
+let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(sync,40)}).observe(document.documentElement,{childList:true,subtree:true});document.addEventListener('click',e=>{if(e.target.closest?.('[data-game-tab="pvp"],.ds-pvp-back'))setTimeout(sync,120)},true);window.refreshPvpHpStatus=sync;setTimeout(sync,300);
+})();
