@@ -1,0 +1,7 @@
+(function(){'use strict';
+if(window.__dsInventoryFilterStatic)return;window.__dsInventoryFilterStatic=true;
+const ARMOR=['HEAD','SHOULDERS','CHEST','GLOVES','BELT','LEGS','BOOTS'];
+function kind(card){const t=(card.textContent||'').toUpperCase();if(t.includes('MAIN HAND'))return'weapons';if(t.includes('TRINKET'))return'trinket';if(t.includes('RING'))return'ring';if(ARMOR.some(x=>t.includes(x)))return'armor';return'other'}
+function apply(btn){const v=document.getElementById('dsGameView'),box=v&&v.querySelector('.ds-items');if(!v||!box)return false;const f=btn.dataset.filter||'all';v.querySelectorAll('.ds-inv-filter').forEach(b=>b.classList.toggle('active',b===btn));let cards=[...box.querySelectorAll('.ds-item')],shown=0;cards.forEach(card=>{let show=f==='all'||(f==='myclass'?!((card.textContent||'').toUpperCase().includes('CANNOT EQUIP')):kind(card)===f);card.style.display=show?'':'none';if(show)shown++});let empty=box.querySelector('.ds-static-filter-empty');if(!cards.length)return true;if(!shown){if(!empty){empty=document.createElement('div');empty.className='ds-empty-inv ds-static-filter-empty';empty.textContent='Nu ai iteme in aceasta categorie.';box.appendChild(empty)}empty.style.display=''}else if(empty)empty.style.display='none';return true}
+document.addEventListener('click',function(e){const b=e.target.closest&&e.target.closest('#dsGameView .ds-inv-filter');if(!b)return;if(!apply(b))return;e.preventDefault();e.stopImmediatePropagation()},true);
+})();
