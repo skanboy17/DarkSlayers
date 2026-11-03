@@ -1,0 +1,6 @@
+(function(){'use strict';
+function active(tab){document.querySelectorAll('.ds-char-tab').forEach(x=>x.classList.toggle('active',x.dataset.gameTab===tab))}
+function bindDungeon(){document.addEventListener('click',async function(ev){const b=ev.target.closest('[data-game-tab="dungeon"]');if(!b)return;if(typeof window.openCharacterDungeon!=='function')return;ev.preventDefault();ev.stopImmediatePropagation();active('dungeon');await window.openCharacterDungeon(window.currentCharacterGame);},true)}
+function optimisticEquip(){document.addEventListener('click',function(ev){const btn=ev.target.closest('.ds-equip-btn');if(!btn)return;const modal=btn.closest('.ds-compare');if(!modal)return;const cards=modal.querySelectorAll('.ds-compare-card');if(cards.length<2)return;const title=modal.querySelector('.ds-compare-head h3')?.textContent||'';const slot=(title.split('·')[0]||'').trim();const newName=cards[1].querySelector('h4')?.textContent?.trim();if(!newName)return;setTimeout(()=>{document.querySelectorAll('.ds-equip-slot').forEach(el=>{const label=(el.childNodes[0]?.textContent||'').trim();if(label===slot){el.classList.add('has-item');const n=el.querySelector('b');if(n)n.textContent=newName}});modal.style.opacity='.35';modal.style.pointerEvents='none';},0)},true)}
+bindDungeon();optimisticEquip();
+})();
