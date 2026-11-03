@@ -1,0 +1,41 @@
+/* DARKSLAYERS - MEMBER BOSS TOKEN WALLET V1 */
+(function(){
+'use strict';
+function client(){try{return typeof darkslayersSupabase!=='undefined'?darkslayersSupabase:null}catch(e){return null}}
+function addCss(){if(document.getElementById('ds-wallet-css'))return;var s=document.createElement('style');s.id='ds-wallet-css';s.textContent='.ds-wallet{margin:12px;border:1px solid #8b6510;background:radial-gradient(circle at 20% 20%,rgba(255,196,45,.12),transparent 42%),linear-gradient(145deg,#211503,#090603);box-shadow:0 0 16px rgba(255,190,30,.12),inset 0 0 16px rgba(255,205,55,.05);padding:14px 15px;display:flex;align-items:center;gap:12px}.ds-wallet-icon{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#4a3003;border:1px solid #c08a13;font-size:22px;box-shadow:0 0 10px rgba(255,190,30,.2)}.ds-wallet-info{min-width:0}.ds-wallet-label{color:#b9a88b;font:800 9px Arial;letter-spacing:1.4px;text-transform:uppercase}.ds-wallet-value{margin-top:3px;color:#ffe06b;font:900 20px Georgia,serif;text-shadow:0 0 8px rgba(255,190,30,.2)}.ds-wallet-value small{font:800 9px Arial;color:#c7b477;letter-spacing:1px}.ds-wallet-note{margin-top:3px;color:#776c60;font:9px Arial}.ds-wallet.offline{border-color:#3b2929;filter:saturate(.45)}';document.head.appendChild(s)}
+function ensure(){var inv=document.querySelector('#dsRewardArea .ds-inventory');if(!inv)return null;var old=inv.querySelector('.ds-wallet');if(old)return old;addCss();var head=inv.querySelector('.ds-inv-head');var box=document.createElement('div');box.className='ds-wallet';box.innerHTML='<div class="ds-wallet-icon">🪙</div><div class="ds-wallet-info"><div class="ds-wallet-label">PORTOFELUL MEU</div><div class="ds-wallet-value"><span data-wallet-value>—</span> <small>BOSS TOKENS</small></div><div class="ds-wallet-note">Tokenuri disponibile pentru Reward Shop</div></div>';if(head)head.insertAdjacentElement('afterend',box);else inv.prepend(box);return box}
+async function refresh(){var box=ensure();if(!box)return;var val=box.querySelector('[data-wallet-value]');var SB=client();if(!SB){val.textContent='—';return}try{var a=await SB.auth.getUser(),u=a&&a.data&&a.data.user;if(!u){box.classList.add('offline');val.textContent='—';return}box.classList.remove('offline');var balance=0,got=false;try{var r=await SB.rpc('get_my_boss_tokens');if(!r.error){var d=Array.isArray(r.data)?r.data[0]:r.data;if(typeof d==='number'){balance=d;got=true}else if(d&&d.balance!=null){balance=Number(d.balance)||0;got=true}else if(d&&d.tokens!=null){balance=Number(d.tokens)||0;got=true}else if(d&&d.boss_tokens!=null){balance=Number(d.boss_tokens)||0;got=true}else if(d!=null&&!isNaN(Number(d))){balance=Number(d)||0;got=true}}}catch(e){}if(!got){var q=await SB.from('boss_tokens').select('balance').eq('user_id',u.id).maybeSingle();if(!q.error&&q.data){balance=Number(q.data.balance)||0;got=true}}val.textContent=Number(balance).toLocaleString('en-US')}catch(e){val.textContent='—'}}
+window.refreshRewardWallet=refresh;
+function start(){var tries=0,t=setInterval(function(){tries++;if(ensure()){refresh();clearInterval(t)}else if(tries>30)clearInterval(t)},200)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+document.addEventListener('click',function(e){if(e.target&&e.target.closest&&e.target.closest('[data-buy]'))setTimeout(refresh,900)});
+})();
+
+/* DARKSLAYERS - DIRECT STAFF PANEL / NO LOGIN FLASH */
+(function(){
+'use strict';
+function cachedRole(){
+  try{
+    var ui=JSON.parse(localStorage.getItem('darkslayers-account-ui')||'null');
+    if(!ui||!ui.loggedIn)return '';
+    if(ui.admin)return 'admin';
+  }catch(e){}
+  try{
+    if(typeof DARKSLAYERS_CURRENT_PROFILE!=='undefined'&&DARKSLAYERS_CURRENT_PROFILE)return String(DARKSLAYERS_CURRENT_PROFILE.role||'').toLowerCase();
+  }catch(e){}
+  return '';
+}
+function install(){
+  var b=document.getElementById('accountButton');
+  if(!b||b.dataset.dsStaffDirect==='1')return;
+  b.dataset.dsStaffDirect='1';
+  b.addEventListener('click',function(e){
+    var role=cachedRole();
+    if(role!=='admin'&&role!=='officer')return;
+    e.preventDefault();e.stopImmediatePropagation();
+    if(role==='admin'&&typeof openAdminPanel==='function'){openAdminPanel();return;}
+    if(role==='officer'&&typeof openOfficerPanel==='function'){openOfficerPanel();}
+  },true);
+}
+install();
+})();
