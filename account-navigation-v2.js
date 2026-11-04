@@ -50,6 +50,7 @@ function accountPanel(saved){
     <button id="adminPanelButton" class="auth-submit admin-panel-button" style="display:${admin?'block':'none'}" onclick="openAdminPanelFromAccount()">♛ ADMIN PANEL</button>
     <button id="officerPanelButton" class="auth-submit admin-panel-button" style="display:none" onclick="openOfficerPanelFromAccount()">⚔ OFFICER PANEL</button>
     <button class="auth-submit profile-panel-button" onclick="openMyProfile()">👤 PROFILUL MEU</button>
+    <button class="auth-submit profile-panel-button" onclick="openDarkSlayersProfileEditorV2()">✎ EDITEAZA PROFILUL</button>
     <button class="auth-submit auth-logout" onclick="logoutDarkSlayers()">LOGOUT</button>
   </div>`;
 }
