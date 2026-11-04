@@ -49,10 +49,10 @@ function accountPanel(saved){
       <strong id="loggedInName">${label}</strong>
       <small id="loggedInEmail"></small>
     </div>
+    <button id="dsAccountEditProfile" class="auth-submit profile-panel-button" onclick="window.openDarkSlayersProfileEditorV2?.()">✎ EDITEAZA PROFILUL</button>
+    <button class="auth-submit profile-panel-button" onclick="openMyProfile()">👤 PROFILUL MEU</button>
     <button id="adminPanelButton" class="auth-submit admin-panel-button" style="display:${admin?'block':'none'}" onclick="openAdminPanelFromAccount()">♛ ADMIN PANEL</button>
     <button id="officerPanelButton" class="auth-submit admin-panel-button" style="display:none" onclick="openOfficerPanelFromAccount()">⚔ OFFICER PANEL</button>
-    <button class="auth-submit profile-panel-button" onclick="openMyProfile()">👤 PROFILUL MEU</button>
-    <button class="auth-submit profile-panel-button" onclick="openDarkSlayersProfileEditorV2()">✎ EDITEAZA PROFILUL</button>
     <button class="auth-submit auth-logout" onclick="logoutDarkSlayers()">LOGOUT</button>
   </div>`;
 }
@@ -65,6 +65,8 @@ function openLoggedAccount(){
     document.head.appendChild(style);
   }
   document.getElementById('siteModal')?.classList.add('ds-account-open');
+  const modalBox=document.querySelector('#siteModal .site-modal-box');
+  if(modalBox){modalBox.style.maxHeight='calc(100dvh - 24px)';modalBox.style.overflowY='auto';}
   const saved=cachedAccount();
   if(!saved)return false;
   openSiteModal({icon:'♛',label:'DARKSLAYERS',title:'CONT',content:accountPanel(saved)});
