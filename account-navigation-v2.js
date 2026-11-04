@@ -57,7 +57,7 @@ function accountPanel(saved){
   </div>`;
 }
 
-function openLoggedAccount(){
+function openLoggedAccount(savedOverride){
   if(!document.getElementById('ds-account-scroll-fix')){
     const style=document.createElement('style');
     style.id='ds-account-scroll-fix';
@@ -67,7 +67,7 @@ function openLoggedAccount(){
   document.getElementById('siteModal')?.classList.add('ds-account-open');
   const modalBox=document.querySelector('#siteModal .site-modal-box');
   if(modalBox){modalBox.style.maxHeight='calc(100dvh - 24px)';modalBox.style.overflowY='auto';}
-  const saved=cachedAccount();
+  const saved=savedOverride||cachedAccount();
   if(!saved)return false;
   openSiteModal({icon:'♛',label:'DARKSLAYERS',title:'CONT',content:accountPanel(saved)});
   (async()=>{
@@ -91,11 +91,22 @@ function openLoggedAccount(){
   })();
   return true;
 }
-window.openDarkSlayersAccount=openLoggedAccount;
+async function openVerifiedAccount(){
+  const client=typeof darkslayersSupabase!=='undefined'?darkslayersSupabase:null;
+  if(!client)return baseOpen('login');
+  try{
+    const result=await client.auth.getSession();
+    const user=result.data?.session?.user;
+    if(!user)return baseOpen('login');
+    const saved=cachedAccount()||{loggedIn:true,label:user.user_metadata?.display_name||'CONTUL MEU',admin:false};
+    openLoggedAccount(saved);
+  }catch(error){console.error('Account session check:',error);}
+}
+window.openDarkSlayersAccount=openVerifiedAccount;
 
 const baseOpen=window.openAccountModal;
 window.openAccountModal=function(mode='login'){
-  if(mode!=='register'&&openLoggedAccount())return;
+  if(mode!=='register'){openVerifiedAccount();return;}
   return baseOpen(mode);
 };
 
@@ -107,7 +118,7 @@ if(oldButton){
   oldButton.replaceWith(button);
   button.addEventListener('click',function(e){
     e.preventDefault();e.stopImmediatePropagation();
-    if(cachedAccount())openLoggedAccount();else baseOpen('login');
+    openVerifiedAccount();
   },true);
 }
 
@@ -116,7 +127,7 @@ document.addEventListener('click',function(e){
   const b=e.target.closest&&e.target.closest('#accountButton');
   if(!b)return;
   e.preventDefault();e.stopImmediatePropagation();
-  if(cachedAccount())openLoggedAccount();else baseOpen('login');
+  openVerifiedAccount();
 },true);
 
 const closeAll=window.closeSiteModal;
