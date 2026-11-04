@@ -14,11 +14,13 @@ let staffOpenAllowed=false;
 async function openAdminAllowed(){
   if(!realOpenAdmin)return;
   staffOpenAllowed=true;
+  document.getElementById('siteModal')?.classList.remove('ds-account-open');
   try{return await realOpenAdmin();}finally{staffOpenAllowed=false;}
 }
 async function openOfficerAllowed(){
   if(!realOpenOfficer)return;
   staffOpenAllowed=true;
+  document.getElementById('siteModal')?.classList.remove('ds-account-open');
   try{return await realOpenOfficer();}finally{staffOpenAllowed=false;}
 }
 
@@ -56,6 +58,13 @@ function accountPanel(saved){
 }
 
 function openLoggedAccount(){
+  if(!document.getElementById('ds-account-scroll-fix')){
+    const style=document.createElement('style');
+    style.id='ds-account-scroll-fix';
+    style.textContent='#siteModal.ds-account-open{overflow-y:auto!important;align-items:safe center!important;overscroll-behavior:contain}#siteModal.ds-account-open #siteModalContent{min-height:0}#siteModal.ds-account-open .auth-logged{gap:12px}';
+    document.head.appendChild(style);
+  }
+  document.getElementById('siteModal')?.classList.add('ds-account-open');
   const saved=cachedAccount();
   if(!saved)return false;
   openSiteModal({icon:'♛',label:'DARKSLAYERS',title:'CONT',content:accountPanel(saved)});
@@ -112,6 +121,7 @@ const closeAll=window.closeSiteModal;
 let navigating=false;
 window.closeSiteModal=function(){
   if(navigating)return;
+  document.getElementById('siteModal')?.classList.remove('ds-account-open');
   const title=(document.getElementById('siteModalTitle')?.textContent||'').trim().toUpperCase();
   if(title==='MODERARE AVATARE'){
     navigating=true;
