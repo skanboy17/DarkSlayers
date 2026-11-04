@@ -130,6 +130,28 @@ document.addEventListener('click',function(e){
   openVerifiedAccount();
 },true);
 
+/* Force-close avatar moderation before legacy modal handlers can reopen it. */
+function dismissAvatarModeration(){
+  const modal=document.getElementById('siteModal');
+  if(!modal)return;
+  modal.classList.remove('open','ds-account-open');
+  modal.setAttribute('aria-hidden','true');
+  document.body.classList.remove('modal-open');
+}
+document.addEventListener('click',function(event){
+  const modal=document.getElementById('siteModal');
+  if(!modal||!modal.classList.contains('open'))return;
+  if((document.getElementById('siteModalTitle')?.textContent||'').trim().toUpperCase()!=='MODERARE AVATARE')return;
+  if(!event.target.closest?.('.site-modal-close, .site-modal-backdrop'))return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  dismissAvatarModeration();
+},true);
+document.addEventListener('keydown',function(event){
+  if(event.key!=='Escape')return;
+  if((document.getElementById('siteModalTitle')?.textContent||'').trim().toUpperCase()!=='MODERARE AVATARE')return;
+  event.preventDefault();event.stopImmediatePropagation();dismissAvatarModeration();
+},true);
 const closeAll=window.closeSiteModal;
 let navigating=false;
 window.closeSiteModal=function(){
