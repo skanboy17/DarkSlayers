@@ -136,22 +136,7 @@ window.closeSiteModal=function(){
   if(navigating)return;
   document.getElementById('siteModal')?.classList.remove('ds-account-open');
   const title=(document.getElementById('siteModalTitle')?.textContent||'').trim().toUpperCase();
-  if(title==='MODERARE AVATARE'){
-    navigating=true;
-    Promise.resolve().then(async()=>{
-      try{
-        const saved=cachedAccount();
-        if(saved?.admin)await openAdminAllowed();
-        else if(typeof getDarkSlayersUser==='function'&&typeof getDarkSlayersProfile==='function'){
-          const user=await getDarkSlayersUser();const profile=user?await getDarkSlayersProfile(user):null;
-          if(profile?.role==='admin')await openAdminAllowed();
-          else if(profile?.role==='officer')await openOfficerAllowed();
-          else openLoggedAccount();
-        }else openLoggedAccount();
-      }finally{navigating=false;}
-    });
-    return;
-  }
+  if(title==='MODERARE AVATARE')return closeAll();
   if(title==='ADMIN PANEL'||title==='OFFICER PANEL'){
     navigating=true;try{openLoggedAccount();}finally{navigating=false;}return;
   }
