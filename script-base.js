@@ -437,7 +437,7 @@ function openRecruitment() {
 ========================================= */
 
 const DARKSLAYERS_DISCORD =
-    "https://discord.gg/UTScHbfbt";
+    "https://discord.gg/va5saSqVtm";
 
 const DARKSLAYERS_TWITCH =
     "https://www.twitch.tv/itsskanners";
